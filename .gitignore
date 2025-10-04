@@ -1,0 +1,13 @@
+*
+
+!/.github
+!/.github/**
+!/.dockerignore
+!/.gitignore
+!/default.releaserc.cjs
+!/Dockerfile
+!/LICENSE
+!/package-lock.json
+!/package.json
+!/README.md
+!/semantic-release.sh
