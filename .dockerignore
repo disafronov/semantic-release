@@ -1,0 +1,6 @@
+*
+
+!/semantic-release.sh
+!/default.releaserc.cjs
+!/package.json
+!/package-lock.json

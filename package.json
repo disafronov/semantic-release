@@ -1,0 +1,30 @@
+{
+  "name": "semantic-release",
+  "version": "1.0.0",
+  "description": "Docker image for semantic-release with GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "semantic-release": "semantic-release"
+  },
+  "dependencies": {
+    "semantic-release": "24.2.9",
+    "@semantic-release/github": "11.0.0",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/release-notes-generator": "14.0.0",
+    "conventional-changelog-conventionalcommits": "9.0.0"
+  },
+  "bin": {
+    "semantic-release": "./node_modules/.bin/semantic-release"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "semantic-release",
+    "docker",
+    "ci",
+    "github-actions"
+  ],
+  "author": "",
+  "license": "Apache-2.0"
+}
