@@ -4,7 +4,7 @@ A minimal Docker image for running semantic-release in CI environments with GitH
 
 ## What's inside
 
-- Node.js 22 (slim)
+- Node.js (slim)
 - semantic-release and plugins
 - git-core and CA certificates
 - Built-in configuration for conventional commits
