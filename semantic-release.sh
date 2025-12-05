@@ -17,4 +17,8 @@ if ! has_local_config; then
   cp /opt/semantic-release/default.releaserc.cjs .releaserc.cjs
 fi
 
+# Set NODE_PATH to allow Node.js scripts to find modules from the image
+# This is needed for scripts executed via @semantic-release/exec plugin
+export NODE_PATH="/opt/semantic-release/node_modules:${NODE_PATH:-}"
+
 exec semantic-release "$@"
