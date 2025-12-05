@@ -5,8 +5,9 @@ A minimal Docker image for running semantic-release in CI environments with GitH
 ## What's inside
 
 - Node.js (slim)
-- semantic-release and plugins
 - git-core and CA certificates
+- semantic-release and plugins
+- TOML file support (via Node.js)
 - Built-in configuration for conventional commits
 - Dependencies managed via package.json with package-lock.json for reproducibility
 
@@ -90,6 +91,55 @@ Example `.releaserc`:
   ]
 }
 ```
+
+### Python Projects
+
+The image supports updating version in `pyproject.toml` files for Python projects. All required dependencies are pre-installed in the image, so no additional downloads are needed during execution.
+
+Example `.releaserc` for Python projects:
+
+```json
+{
+  "branches": ["main"],
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "conventionalcommits",
+      "releaseRules": [
+        { "type": "feat", "release": "minor" },
+        { "type": "fix", "release": "patch" },
+        { "type": "perf", "release": "patch" },
+        { "type": "revert", "release": "patch" },
+        { "type": "refactor", "release": "patch" },
+        { "type": "docs", "release": false },
+        { "type": "style", "release": false },
+        { "type": "test", "release": false },
+        { "type": "build", "release": false },
+        { "type": "ci", "release": false },
+        { "type": "chore", "release": false }
+      ]
+    }],
+    ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "node -e \"const fs=require('fs'),toml=require('@iarna/toml');const f='pyproject.toml';const data=toml.parse(fs.readFileSync(f,'utf8'));data.project.version='${nextRelease.version}';fs.writeFileSync(f,toml.stringify(data))\""
+    }],
+    ["@semantic-release/git", {
+      "assets": ["pyproject.toml"],
+      "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+    }],
+    ["@semantic-release/github", {}]
+  ]
+}
+```
+
+Ensure your `pyproject.toml` has a `[project]` section with a `version` field:
+
+```toml
+[project]
+name = "your-package-name"
+version = "0.0.0"
+```
+
+The `@semantic-release/exec` plugin will update the `project.version` field in `pyproject.toml` using the TOML parser, and `@semantic-release/git` will commit the changes back to the repository.
 
 ## Troubleshooting
 
