@@ -26,7 +26,7 @@ jobs:
           echo "version=${NODE_VERSION}" >> $GITHUB_OUTPUT
           echo "Using Node.js version: ${NODE_VERSION}"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ steps.node-version.outputs.version }}
 
