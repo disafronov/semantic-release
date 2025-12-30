@@ -1,4 +1,4 @@
-## [1.5.0](https://github.com/disafronov/semantic-release/compare/v1.4.2...v1.5.0) (2025-12-30)
+## [2.0.0](https://github.com/disafronov/semantic-release/compare/v1.4.2...v2.0.0) (2025-12-30)
 
 ### ⚠ BREAKING CHANGES
 
