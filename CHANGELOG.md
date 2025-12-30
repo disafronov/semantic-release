@@ -1,3 +1,17 @@
+## [1.5.0](https://github.com/disafronov/semantic-release/compare/v1.4.2...v1.5.0) (2025-12-30)
+
+### ⚠ BREAKING CHANGES
+
+* add breaking support!!
+
+### Features
+
+* add breaking support!! ([bba0bd8](https://github.com/disafronov/semantic-release/commit/bba0bd81acccf5dbecf442ded77a54b9373bb74a))
+
+### Bug Fixes
+
+* message ([3a861f9](https://github.com/disafronov/semantic-release/commit/3a861f9a05e3e351ba57bb8a4addf7277da76f58))
+
 ## [1.4.2](https://github.com/disafronov/semantic-release/compare/v1.4.1...v1.4.2) (2025-12-08)
 
 ### Bug Fixes
