@@ -1,4 +1,4 @@
-FROM node:25.6.1-slim
+FROM node:25.8.0-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
