@@ -153,3 +153,5 @@ The `@semantic-release/exec` plugin will update the `project.version` field in `
 - Package cache is cleaned during build.
 - Dependencies are installed locally in `/opt/semantic-release` with exact versions from package-lock.json.
 - Keep tokens scoped minimally and rotate regularly.
+
+<!-- refactor: deps -->
