@@ -22,7 +22,7 @@ module.exports = {
     ["@semantic-release/changelog", {}],
     ["@semantic-release/git", {
       assets: ["CHANGELOG.md"],
-      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}\n\nSigned-off-by: semantic-release-bot <semantic-release-bot@martynus.net>"
+      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}\n\nSigned-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
     }],
     ["@semantic-release/github", {}]
   ]
