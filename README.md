@@ -55,7 +55,12 @@ jobs:
 
 The image automatically uses `GITHUB_TOKEN` from GitHub Actions context. No additional setup required.
 
-Optional:
+Git committers and annotated taggers default to `github-actions[bot]`
+(`41898282+github-actions[bot]@users.noreply.github.com`).
+Author settings are unchanged: semantic-release uses its default author unless
+`GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` are supplied.
+
+Optional overrides:
 
 - GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL
 - GIT_COMMITTER_NAME / GIT_COMMITTER_EMAIL
