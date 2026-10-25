@@ -1,3 +1,9 @@
+## [2.0.13](https://github.com/disafronov/semantic-release/compare/v2.0.12...v2.0.13) (2026-10-25)
+
+### Bug Fixes
+
+* **ci:** attribute generated releases to GitHub Actions ([872ad2f](https://github.com/disafronov/semantic-release/commit/872ad2f70b5f0f68128ba6bd28c0bb00f631ff46))
+
 ## [2.0.12](https://github.com/disafronov/semantic-release/compare/v2.0.11...v2.0.12) (2026-10-25)
 
 ### Bug Fixes
