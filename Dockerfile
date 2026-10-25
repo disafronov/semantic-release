@@ -12,7 +12,9 @@ ARG NODE_ENV=production
 ENV NODE_ENV=$NODE_ENV
 
 # Attribute automated release commits and tags to GitHub Actions.
-ENV GIT_COMMITTER_NAME="github-actions[bot]" \
+ENV GIT_AUTHOR_NAME="github-actions[bot]" \
+    GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
+    GIT_COMMITTER_NAME="github-actions[bot]" \
     GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 
 # Set working directory
