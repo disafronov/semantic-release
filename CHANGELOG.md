@@ -1,3 +1,9 @@
+## [2.0.12](https://github.com/disafronov/semantic-release/compare/v2.0.11...v2.0.12) (2026-10-25)
+
+### Bug Fixes
+
+* **ci:** use GitHub Actions as the release committer ([341a3ed](https://github.com/disafronov/semantic-release/commit/341a3edabbecb0141b1dfa2133e25c09ddc16a1a))
+
 ## [2.0.10](https://github.com/disafronov/semantic-release/compare/v2.0.9...v2.0.10) (2026-10-08)
 
 ## [2.0.0](https://github.com/disafronov/semantic-release/compare/v1.4.2...v2.0.0) (2025-12-30)
