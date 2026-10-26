@@ -1,3 +1,10 @@
+## [2.0.14](https://github.com/disafronov/semantic-release/compare/v2.0.13...v2.0.14) (2026-10-26)
+
+### Bug Fixes
+
+* derive release sign-off from Git committer identity ([af6620a](https://github.com/disafronov/semantic-release/commit/af6620aacacdd91d080974c9b8577e0923e1e796))
+* use Git identity environment for lockfile commits ([cd9ca76](https://github.com/disafronov/semantic-release/commit/cd9ca76e79b32936cfa1e8daf0c36254502f61ec))
+
 ## [2.0.13](https://github.com/disafronov/semantic-release/compare/v2.0.12...v2.0.13) (2026-10-25)
 
 ### Bug Fixes
