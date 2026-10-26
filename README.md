@@ -69,6 +69,20 @@ Optional overrides:
 
 Create a `.releaserc` (JSON or YAML) or `release` field in `package.json`.
 
+The wrapper also recognizes `.releaserc.{json,yaml,yml,js,ts,cjs,mjs}`,
+`.config/releaserc` (with the same optional extensions), and
+`release.config.{js,ts,cjs,mjs}`, matching semantic-release's configuration loader.
+TypeScript configurations require the loader's optional `typescript` dependency.
+Only the top-level `release` property in `package.json` counts as configuration;
+an npm `scripts.release` entry does not.
+
+When no local configuration is found, the wrapper prints
+`No local semantic-release configuration found, using default` and runs
+`semantic-release --extends /opt/semantic-release/default.releaserc.cjs`, followed
+by the original arguments. It does not write a configuration file into the
+project. When local configuration exists, the original arguments are passed
+without adding `--extends`.
+
 Example `.releaserc`:
 
 ```json
