@@ -1,3 +1,10 @@
+## [2.0.16-rc.1](https://github.com/disafronov/semantic-release/compare/v2.0.15...v2.0.16-rc.1) (2026-10-26)
+
+### Bug Fixes
+
+* audit (partial) ([67c264c](https://github.com/disafronov/semantic-release/commit/67c264c5a48546759c39325cf2480c561f41382f))
+* separate image release policy from consumer defaults ([172eb9c](https://github.com/disafronov/semantic-release/commit/172eb9c5a2a7870228bfb1c96ac49faa4c77d558))
+
 ## [2.0.15](https://github.com/disafronov/semantic-release/compare/v2.0.14...v2.0.15) (2026-10-26)
 
 ### Bug Fixes
