@@ -1,3 +1,9 @@
+const { execFileSync } = require("node:child_process");
+
+const committer = execFileSync("git", ["var", "GIT_COMMITTER_IDENT"], {
+  encoding: "utf8"
+}).trim().replace(/>.*$/, ">");
+
 module.exports = {
   branches: ["main"],
   plugins: [
@@ -22,7 +28,7 @@ module.exports = {
     ["@semantic-release/changelog", {}],
     ["@semantic-release/git", {
       assets: ["CHANGELOG.md"],
-      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}\n\nSigned-off-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}\n\nSigned-off-by: " + committer
     }],
     ["@semantic-release/github", {}]
   ]
