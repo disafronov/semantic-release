@@ -1,3 +1,9 @@
+## [2.0.15](https://github.com/disafronov/semantic-release/compare/v2.0.14...v2.0.15) (2026-10-26)
+
+### Bug Fixes
+
+* extend default release config without copying it ([3de6df2](https://github.com/disafronov/semantic-release/commit/3de6df242f61c2cc6b3ffda01f5004533338b80f))
+
 ## [2.0.14](https://github.com/disafronov/semantic-release/compare/v2.0.13...v2.0.14) (2026-10-26)
 
 ### Bug Fixes
