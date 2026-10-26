@@ -1,0 +1,37 @@
+name: Test
+
+"on":
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  entrypoint:
+    name: Entrypoint regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Extract Node.js version from Dockerfile
+        id: node-version
+        run: |
+          NODE_VERSION=$(grep '^FROM node:' Dockerfile | sed 's/.*node:\([0-9.]*\).*/\1/')
+          echo "version=${NODE_VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.node-version.outputs.version }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check shell syntax
+        run: sh -n semantic-release.sh
+      - name: Test entrypoint
+        run: npm test

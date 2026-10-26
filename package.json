@@ -4,6 +4,7 @@
   "description": "Docker image for semantic-release with GitHub Actions",
   "main": "index.js",
   "scripts": {
+    "test": "node --test",
     "semantic-release": "semantic-release"
   },
   "dependencies": {
