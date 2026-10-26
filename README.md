@@ -174,3 +174,20 @@ The `@semantic-release/exec` plugin will update the `project.version` field in `
 - Keep tokens scoped minimally and rotate regularly.
 
 <!-- refactor: deps -->
+
+## Release policies
+
+The bundled `default.releaserc.cjs` keeps stable releases from `main`. Projects
+without their own release config continue using this policy through the
+entrypoint's conditional `--extends`; a `release` branch is not required.
+
+This image repository has its own standalone `.releaserc.cjs`: `main` produces
+`rc` prereleases and `release` produces stable releases. Its stable branch
+already exists. Stable publication follows a reviewed promotion of the local
+config and project changes to `release`. The local config is not copied into
+the image, so it cannot change the policy of consumer projects.
+
+Other projects select their policy through their own local configuration.
+Template sources, OpenCode Memoir and Telegram File Sender intentionally keep
+stable releases directly from `main`. Common release rules, plugins and dynamic
+Git committer sign-off are the same in both bundled and local image configs.
