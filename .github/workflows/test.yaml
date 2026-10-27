@@ -33,5 +33,7 @@ jobs:
         run: npm ci
       - name: Check shell syntax
         run: sh -n semantic-release.sh
+      - name: Prepare local release configuration
+        run: cp default.releaserc.cjs .releaserc.cjs
       - name: Test entrypoint
         run: npm test
