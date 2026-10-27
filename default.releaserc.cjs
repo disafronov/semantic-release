@@ -5,7 +5,7 @@ const committer = execFileSync("git", ["var", "GIT_COMMITTER_IDENT"], {
 }).trim().replace(/>.*$/, ">");
 
 module.exports = {
-  branches: ["main"],
+  branches: ["main", { name: "rc", prerelease: "rc" }],
   plugins: [
     ["@semantic-release/commit-analyzer", {
       preset: "conventionalcommits",
