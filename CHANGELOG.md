@@ -1,3 +1,9 @@
+## [2.0.19](https://github.com/disafronov/semantic-release/compare/v2.0.18...v2.0.19) (2026-10-27)
+
+### Bug Fixes
+
+* include refactors in release notes and bound glob major ([d5536be](https://github.com/disafronov/semantic-release/commit/d5536bef4bd37433d4cf131ea5dac2e6b6f2d608))
+
 ## [2.0.18](https://github.com/disafronov/semantic-release/compare/v2.0.17...v2.0.18) (2026-10-27)
 
 ## [2.0.17](https://github.com/disafronov/semantic-release/compare/v2.0.16...v2.0.17) (2026-10-27)
