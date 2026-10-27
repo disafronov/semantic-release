@@ -112,3 +112,11 @@ test('optional rc branch produces prereleases while main stays stable', async (t
     assert.equal(version, branch.name === 'main' ? '1.2.4' : '1.2.4-rc.1');
   }
 });
+
+test('refactor remains a patch release and appears in generated notes', () => {
+  const config = load('default.releaserc.cjs');
+  const analyzer = config.plugins.find(([name]) => name === '@semantic-release/commit-analyzer')[1];
+  const notes = config.plugins.find(([name]) => name === '@semantic-release/release-notes-generator')[1];
+  assert.deepEqual(analyzer.releaseRules.find(({ type }) => type === 'refactor'), { type: 'refactor', release: 'patch' });
+  assert.deepEqual(notes.presetConfig.types.find(({ type }) => type === 'refactor'), { type: 'refactor', section: 'Code Refactoring' });
+});
