@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
-const { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { Writable } = require('node:stream');
@@ -54,20 +54,14 @@ async function library(name) {
   return (await import(pathToFileURL(path.join(upstream, 'lib', name)))).default;
 }
 
-test('bundled consumer default stays stable on main and local image config changes only branches', () => {
+test('bundled default supports stable main and optional rc', () => {
   const bundled = load('default.releaserc.cjs');
-  const local = load('.releaserc.cjs');
-  assert.deepEqual(bundled.branches, ['main']);
-  assert.deepEqual(local.branches, ['release', { name: 'main', prerelease: 'rc' }]);
-  const { branches: bundledBranches, ...common } = bundled;
-  const { branches: localBranches, ...localCommon } = local;
-  assert.deepEqual(localCommon, common);
-  assert.equal(local.extends, undefined);
+  assert.deepEqual(bundled.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
   assert.equal(bundled.extends, undefined);
 });
 
-test('both standalone configurations derive sign-off from the actual Git committer', () => {
-  for (const name of ['default.releaserc.cjs', '.releaserc.cjs']) {
+test('bundled configuration derives sign-off from the actual Git committer', () => {
+  for (const name of ['default.releaserc.cjs']) {
     for (const [who, email] of [['First Committer', 'first@example.invalid'], ['Other Committer', 'other@example.invalid']]) {
       const config = load(name, { GIT_COMMITTER_NAME: who, GIT_COMMITTER_EMAIL: email });
       const message = config.plugins.find(([plugin]) => plugin === '@semantic-release/git')[1].message;
@@ -80,18 +74,9 @@ test('actual semantic-release loader resolves the bundled default and every plug
   const { context } = fixture(t);
   const getConfig = await library('get-config.js');
   const { options, plugins } = await getConfig(context, { extends: [path.join(root, 'default.releaserc.cjs')] });
-  assert.deepEqual(options.branches, ['main']);
+  assert.deepEqual(options.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
   assert.equal(options.plugins.length, 5);
   assert.equal(typeof plugins.prepare, 'function');
-});
-
-test('actual loader uses the local image config without injected extends', async (t) => {
-  const { cwd, context } = fixture(t, true);
-  copyFileSync(path.join(root, '.releaserc.cjs'), path.join(cwd, '.releaserc.cjs'));
-  const getConfig = await library('get-config.js');
-  const { options } = await getConfig(context, {});
-  assert.deepEqual(options.branches, ['release', { name: 'main', prerelease: 'rc' }]);
-  assert.equal(options.plugins.length, 5);
 });
 
 test('a consumer with only main remains a stable release branch', async (t) => {
@@ -108,17 +93,22 @@ test('a consumer with only main remains a stable release branch', async (t) => {
   assert.equal(getNextVersion({ branch, lastRelease, nextRelease: { type: 'patch', channel: branch.channel }, logger }), '1.2.4');
 });
 
-test('image repository resolves main RC and release stable with existing tag history', async (t) => {
-  const { remote, context } = fixture(t, true);
+test('optional rc branch produces prereleases while main stays stable', async (t) => {
+  const { cwd, remote, context } = fixture(t);
+  git(cwd, 'branch', 'rc');
+  git(cwd, 'push', 'origin', 'rc');
   const getBranches = await library('branches/index.js');
   const getLastRelease = await library('get-last-release.js');
   const getNextVersion = await library('get-next-version.js');
-  const options = { branches: load('.releaserc.cjs').branches, tagFormat: 'v${version}' };
+  const options = { branches: load('default.releaserc.cjs').branches, tagFormat: 'v${version}' };
   const branches = await getBranches(pathToFileURL(remote).href, 'main', { ...context, options });
-  assert.deepEqual(branches.map(({ name, type }) => ({ name, type })), [{ name: 'release', type: 'release' }, { name: 'main', type: 'prerelease' }]);
+  assert.deepEqual(branches.map(({ name, type }) => ({ name, type })), [
+    { name: 'main', type: 'release' },
+    { name: 'rc', type: 'prerelease' },
+  ]);
   for (const branch of branches) {
     const lastRelease = getLastRelease({ branch, options });
     const version = getNextVersion({ branch, lastRelease, nextRelease: { type: 'patch', channel: branch.channel }, logger });
-    assert.equal(version, branch.name === 'main' ? '1.2.4-rc.1' : '1.2.4');
+    assert.equal(version, branch.name === 'main' ? '1.2.4' : '1.2.4-rc.1');
   }
 });
