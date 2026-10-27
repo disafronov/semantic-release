@@ -175,19 +175,19 @@ The `@semantic-release/exec` plugin will update the `project.version` field in `
 
 ## Release policies
 
-The bundled `default.releaserc.cjs` keeps stable releases from `main`. Projects
-without their own release config continue using this policy through the
-entrypoint's conditional `--extends`; a `release` branch is not required.
+The bundled `default.releaserc.cjs` produces stable releases from `main` and
+supports an optional `rc` branch for `rc` prereleases. A `release` branch
+is not required. Projects without a local release configuration use this
+default through the entrypoint's conditional `--extends`.
 
-This image repository has its own standalone `.releaserc.cjs`: `main` produces
-`rc` prereleases and `release` produces stable releases. Its stable branch
-already exists. Stable publication follows a reviewed promotion of the local
-config and project changes to `release`. The local config is not copied into
-the image, so it cannot change the policy of consumer projects.
+This image repository uses the same default policy instead of maintaining
+a separate root `.releaserc.cjs`. Its test workflow copies the default
+configuration to a local file for tests. The existing semantic workflow
+is intentionally unchanged during the migration: stable releases now
+originate from `main`, while automatic `rc` releases are not yet enabled.
 
-Other projects select their policy through their own local configuration.
-Template sources, OpenCode Memoir and Telegram File Sender intentionally keep
-stable releases directly from `main`. Common release rules, plugins and dynamic
-Git committer sign-off are the same in both bundled and local image configs.
+Other projects can override the default through their own local
+configuration. The bundled policy retains the shared release rules,
+plugins and dynamic Git committer sign-off.
 
 <!-- refactor: deps -->
