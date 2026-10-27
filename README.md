@@ -173,8 +173,6 @@ The `@semantic-release/exec` plugin will update the `project.version` field in `
 - Dependencies are installed locally in `/opt/semantic-release` with exact versions from package-lock.json.
 - Keep tokens scoped minimally and rotate regularly.
 
-<!-- refactor: deps -->
-
 ## Release policies
 
 The bundled `default.releaserc.cjs` keeps stable releases from `main`. Projects
@@ -191,3 +189,5 @@ Other projects select their policy through their own local configuration.
 Template sources, OpenCode Memoir and Telegram File Sender intentionally keep
 stable releases directly from `main`. Common release rules, plugins and dynamic
 Git committer sign-off are the same in both bundled and local image configs.
+
+<!-- refactor: deps -->
