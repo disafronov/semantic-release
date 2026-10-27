@@ -24,7 +24,24 @@ module.exports = {
         { type: "chore", release: false }
       ]
     }],
-    ["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+    ["@semantic-release/release-notes-generator", {
+      preset: "conventionalcommits",
+      presetConfig: {
+        types: [
+          { type: "feat", section: "Features" },
+          { type: "fix", section: "Bug Fixes" },
+          { type: "perf", section: "Performance Improvements" },
+          { type: "revert", section: "Reverts" },
+          { type: "refactor", section: "Code Refactoring" },
+          { type: "docs", section: "Documentation", hidden: true },
+          { type: "style", section: "Styles", hidden: true },
+          { type: "test", section: "Tests", hidden: true },
+          { type: "build", section: "Build System", hidden: true },
+          { type: "ci", section: "Continuous Integration", hidden: true },
+          { type: "chore", section: "Miscellaneous Chores", hidden: true }
+        ]
+      }
+    }],
     ["@semantic-release/changelog", {}],
     ["@semantic-release/git", {
       assets: ["CHANGELOG.md"],
