@@ -1,3 +1,9 @@
+## [3.0.1](https://github.com/disafronov/semantic-release/compare/v3.0.0...v3.0.1) (2026-11-02)
+
+### Code Refactoring
+
+* rename hasPython to hasUv ([35283aa](https://github.com/disafronov/semantic-release/commit/35283aa609b068ce1884e139e65f3b8d6c62c454))
+
 ## [3.0.0](https://github.com/disafronov/semantic-release/compare/v2.0.19...v3.0.0) (2026-11-02)
 
 ### ⚠ BREAKING CHANGES
