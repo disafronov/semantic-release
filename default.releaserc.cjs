@@ -1,4 +1,21 @@
+const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
+
+// Only opt in when both the manifest and its lockfile are present.
+const hasPython = fs.existsSync("pyproject.toml") && fs.existsSync("uv.lock");
+const hasNpm = fs.existsSync("package.json") && fs.existsSync("package-lock.json");
+const assets = ["CHANGELOG.md"];
+const versionPlugins = [];
+if (hasPython) {
+  versionPlugins.push(["@semantic-release/exec", {
+    prepareCmd: 'uv version --no-sync "${nextRelease.version}"'
+  }]);
+  assets.push("pyproject.toml", "uv.lock");
+}
+if (hasNpm) {
+  versionPlugins.push(["@semantic-release/npm", { npmPublish: false }]);
+  assets.push("package.json", "package-lock.json");
+}
 
 const committer = execFileSync("git", ["var", "GIT_COMMITTER_IDENT"], {
   encoding: "utf8"
@@ -43,8 +60,9 @@ module.exports = {
       }
     }],
     ["@semantic-release/changelog", {}],
+    ...versionPlugins,
     ["@semantic-release/git", {
-      assets: ["CHANGELOG.md"],
+      assets,
       message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}\n\nSigned-off-by: " + committer
     }],
     ["@semantic-release/github", {}]
