@@ -75,7 +75,7 @@ test('actual semantic-release loader resolves the bundled default and every plug
   const getConfig = await library('get-config.js');
   const { options, plugins } = await getConfig(context, { extends: [path.join(root, 'default.releaserc.cjs')] });
   assert.deepEqual(options.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
-  assert.equal(options.plugins.length, 5);
+  assert.equal(options.plugins.length, 6);
   assert.equal(typeof plugins.prepare, 'function');
 });
 
