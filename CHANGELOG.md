@@ -1,3 +1,9 @@
+## [2.0.20](https://github.com/disafronov/semantic-release/compare/v2.0.19...v2.0.20) (2026-11-02)
+
+### Reverts
+
+* discard recent Node and glob dependency bumps ([b2cdb76](https://github.com/disafronov/semantic-release/commit/b2cdb766faefd2f630bdbe9f368ca193c4af5a53))
+
 ## [2.0.19](https://github.com/disafronov/semantic-release/compare/v2.0.18...v2.0.19) (2026-10-27)
 
 ### Bug Fixes
