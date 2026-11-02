@@ -120,3 +120,37 @@ test('refactor remains a patch release and appears in generated notes', () => {
   assert.deepEqual(analyzer.releaseRules.find(({ type }) => type === 'refactor'), { type: 'refactor', release: 'patch' });
   assert.deepEqual(notes.presetConfig.types.find(({ type }) => type === 'refactor'), { type: 'refactor', section: 'Code Refactoring' });
 });
+
+test('default enables versioning only for complete manifest and lockfile pairs', (t) => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'release-detection-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const run = (files) => {
+    for (const file of ['pyproject.toml', 'uv.lock', 'package.json', 'package-lock.json']) {
+      try { require('node:fs').unlinkSync(path.join(dir, file)); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
+    for (const file of files) writeFileSync(path.join(dir, file), '');
+    return JSON.parse(execFileSync(process.execPath, ['-e', `process.stdout.write(JSON.stringify(require(${JSON.stringify(path.join(root, 'default.releaserc.cjs'))})))`], {
+      cwd: dir, env, encoding: 'utf8'
+    }));
+  };
+  for (const [files, python, npm] of [
+    [[], false, false],
+    [['pyproject.toml'], false, false],
+    [['package.json'], false, false],
+    [['pyproject.toml', 'uv.lock'], true, false],
+    [['package.json', 'package-lock.json'], false, true],
+    [['pyproject.toml', 'uv.lock', 'package.json', 'package-lock.json'], true, true]
+  ]) {
+    const config = run(files);
+    const names = config.plugins.map(([name]) => name);
+    assert.equal(names.includes('@semantic-release/exec'), python);
+    assert.equal(names.includes('@semantic-release/npm'), npm);
+    const assets = config.plugins.find(([name]) => name === '@semantic-release/git')[1].assets;
+    assert.deepEqual(assets, ['CHANGELOG.md',
+      ...(python ? ['pyproject.toml', 'uv.lock'] : []),
+      ...(npm ? ['package.json', 'package-lock.json'] : [])
+    ]);
+    if (python) assert.equal(config.plugins.find(([name]) => name === '@semantic-release/exec')[1].prepareCmd, 'uv version --no-sync "${nextRelease.version}"');
+    if (npm) assert.equal(config.plugins.find(([name]) => name === '@semantic-release/npm')[1].npmPublish, false);
+  }
+});
