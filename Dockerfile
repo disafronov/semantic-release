@@ -16,7 +16,8 @@ ARG NODE_ENV=production
 ENV NODE_ENV=$NODE_ENV
 
 # uv needs a writable cache when the container runs as a non-root UID.
-ENV UV_CACHE_DIR=/tmp/uv-cache
+ENV UV_CACHE_DIR=/tmp/uv-cache \
+    UV_PYTHON_INSTALL_DIR=/tmp/uv-python
 
 # Attribute automated release commits and tags to GitHub Actions.
 ENV GIT_AUTHOR_NAME="github-actions[bot]" \
