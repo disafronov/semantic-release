@@ -1,3 +1,16 @@
+## [3.0.0-rc.1](https://github.com/disafronov/semantic-release/compare/v2.1.0-rc.1...v3.0.0-rc.1) (2026-11-02)
+
+### ⚠ BREAKING CHANGES
+
+* Repositories using the legacy release branch must migrate
+to main as the stable release branch before adopting this workflow.
+
+Signed-off-by: Dmitrii Safronov <dhameoelin@gmail.com>
+
+### Features
+
+* remove legacy release branch support ([9e1bc2f](https://github.com/disafronov/semantic-release/commit/9e1bc2f003e8b13d4e328f0298f78c962c20592b))
+
 ## [2.1.0-rc.1](https://github.com/disafronov/semantic-release/compare/v2.0.19...v2.1.0-rc.1) (2026-11-02)
 
 ### Features
