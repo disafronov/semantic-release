@@ -1,3 +1,9 @@
+## [3.0.0-rc.2](https://github.com/disafronov/semantic-release/compare/v3.0.0-rc.1...v3.0.0-rc.2) (2026-11-02)
+
+### Bug Fixes
+
+* use writable uv cache for non-root release jobs ([54335d9](https://github.com/disafronov/semantic-release/commit/54335d90e4faadf8b83bcf32ef6c4fd2e9d846af))
+
 ## [3.0.0-rc.1](https://github.com/disafronov/semantic-release/compare/v2.1.0-rc.1...v3.0.0-rc.1) (2026-11-02)
 
 ### ⚠ BREAKING CHANGES
