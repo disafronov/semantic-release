@@ -1,4 +1,8 @@
+FROM ghcr.io/astral-sh/uv:0.13.6 AS uv
+
 FROM node:26.12.1-slim
+
+COPY --from=uv /uv /uvx /usr/local/bin/
 
 ARG DEBIAN_FRONTEND=noninteractive
 
