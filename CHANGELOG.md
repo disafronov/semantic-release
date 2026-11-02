@@ -1,3 +1,9 @@
+## [3.0.0-rc.3](https://github.com/disafronov/semantic-release/compare/v3.0.0-rc.2...v3.0.0-rc.3) (2026-11-02)
+
+### Bug Fixes
+
+* use writable uv Python installation directory for non-root releases ([8a6241e](https://github.com/disafronov/semantic-release/commit/8a6241e34948994f1f341b75072dfb13457854b3))
+
 ## [3.0.0-rc.2](https://github.com/disafronov/semantic-release/compare/v3.0.0-rc.1...v3.0.0-rc.2) (2026-11-02)
 
 ### Bug Fixes
