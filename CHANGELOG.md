@@ -1,3 +1,31 @@
+## [3.0.0](https://github.com/disafronov/semantic-release/compare/v2.0.19...v3.0.0) (2026-11-02)
+
+### ⚠ BREAKING CHANGES
+
+* Repositories using the legacy release branch must migrate
+to main as the stable release branch before adopting this workflow.
+
+Signed-off-by: Dmitrii Safronov <dhameoelin@gmail.com>
+
+### Features
+
+* **ci:** allow selecting semantic-release image tag via repository variable ([c5c0157](https://github.com/disafronov/semantic-release/commit/c5c0157f086e3b149c3d8f7750f4f4589a382a6c))
+* prepare automatic Python and npm package versioning ([902fc7d](https://github.com/disafronov/semantic-release/commit/902fc7d126f0f542696d67b2a3e5aaabdfbef684))
+* prepare automatic Python and npm package versioning ([93cbb76](https://github.com/disafronov/semantic-release/commit/93cbb76afb2ff03baef029b7e5ad7f62e2407ce6))
+* prepare automatic Python and npm package versioning ([69f5382](https://github.com/disafronov/semantic-release/commit/69f5382006c8f9818262e0c4880d7fa1071c7ab7))
+* prepare automatic Python and npm package versioning ([1bf085f](https://github.com/disafronov/semantic-release/commit/1bf085f9af3bfc454899df2ee24b06575cf0fc1b))
+* prepare automatic Python and npm package versioning ([94a425a](https://github.com/disafronov/semantic-release/commit/94a425a5c49cb7d8cd5621b8b90bf68665644d32))
+* prepare automatic Python and npm package versioning ([5705428](https://github.com/disafronov/semantic-release/commit/5705428a39a45730c82c92733b4a580260d5a58a))
+* remove legacy release branch support ([b8b42e5](https://github.com/disafronov/semantic-release/commit/b8b42e5eef2fe7fb4b80538faad1d7b0eb460a21))
+
+### Bug Fixes
+
+* audit ([7571cce](https://github.com/disafronov/semantic-release/commit/7571cce7be6a712a870c373f5eeebd2decde23df))
+* **ci:** validate rc pull requests ([66dcdda](https://github.com/disafronov/semantic-release/commit/66dcdda747d3d267c001df93902679e27d1dc097))
+* **ci:** validate rc pull requests ([2bea985](https://github.com/disafronov/semantic-release/commit/2bea98537f75d0bf0d36e21dc7a50b1bc86d27e9))
+* use writable uv cache for non-root release jobs ([4818bfe](https://github.com/disafronov/semantic-release/commit/4818bfed988948c929147709169029d4ac1a5beb))
+* use writable uv Python installation directory for non-root releases ([ed05575](https://github.com/disafronov/semantic-release/commit/ed055756ec0367567c1de80a84a620a9a1a706f6))
+
 ## [3.0.0-rc.3](https://github.com/disafronov/semantic-release/compare/v3.0.0-rc.2...v3.0.0-rc.3) (2026-11-02)
 
 ### Bug Fixes
