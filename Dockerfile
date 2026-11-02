@@ -15,6 +15,9 @@ RUN apt-get update -y && \
 ARG NODE_ENV=production
 ENV NODE_ENV=$NODE_ENV
 
+# uv needs a writable cache when the container runs as a non-root UID.
+ENV UV_CACHE_DIR=/tmp/uv-cache
+
 # Attribute automated release commits and tags to GitHub Actions.
 ENV GIT_AUTHOR_NAME="github-actions[bot]" \
     GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
