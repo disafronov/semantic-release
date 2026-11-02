@@ -4,6 +4,7 @@ name: Test
   pull_request:
     branches:
       - main
+      - rc
   push:
     branches:
       - main
