@@ -148,9 +148,8 @@ default through the entrypoint's conditional `--extends`.
 
 This image repository uses the same default policy instead of maintaining
 a separate root `.releaserc.cjs`. Its test workflow copies the default
-configuration to a local file for tests. The existing semantic workflow
-is intentionally unchanged during the migration: stable releases now
-originate from `main`, while automatic `rc` releases are not yet enabled.
+configuration to a local file for tests. The semantic workflow runs automatically on pushes to `main` and `rc`:
+`main` publishes stable releases and `rc` publishes prereleases.
 
 Other projects can override the default through their own local
 configuration. The bundled policy retains the shared release rules,
