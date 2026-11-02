@@ -1,3 +1,21 @@
+## [2.1.0-rc.1](https://github.com/disafronov/semantic-release/compare/v2.0.19...v2.1.0-rc.1) (2026-11-02)
+
+### Features
+
+* **ci:** allow selecting semantic-release image tag via repository variable ([f8417a6](https://github.com/disafronov/semantic-release/commit/f8417a643bad1a6750b1523a19f8da6444cb38f6))
+* prepare automatic Python and npm package versioning ([c934f00](https://github.com/disafronov/semantic-release/commit/c934f005fd7228426c5e3e0942b5209824751bae))
+* prepare automatic Python and npm package versioning ([423f4e7](https://github.com/disafronov/semantic-release/commit/423f4e7dc42d05d188503d5e4f572d6a471eac2e))
+* prepare automatic Python and npm package versioning ([6169376](https://github.com/disafronov/semantic-release/commit/6169376687285fae2fe78cc3685311255f62ac60))
+* prepare automatic Python and npm package versioning ([2aadc91](https://github.com/disafronov/semantic-release/commit/2aadc9140aa1c5045a24ce84bdfcb9cc10ef95be))
+* prepare automatic Python and npm package versioning ([6b3d2ba](https://github.com/disafronov/semantic-release/commit/6b3d2ba506c1159f409b16a4a45d9f317e24b23d))
+* prepare automatic Python and npm package versioning ([31e614f](https://github.com/disafronov/semantic-release/commit/31e614f68245feb8ac39dafa3dce316703c428fe))
+
+### Bug Fixes
+
+* audit ([f85a95e](https://github.com/disafronov/semantic-release/commit/f85a95ee7f7c2683725b99dc9c795f5bd6b288ae))
+* **ci:** validate rc pull requests ([b6f46e6](https://github.com/disafronov/semantic-release/commit/b6f46e62269b22ce7ab543e5135f9def2ea60368))
+* **ci:** validate rc pull requests ([c6d600c](https://github.com/disafronov/semantic-release/commit/c6d600c942efdc1e826a35eea032300e64214463))
+
 ## [2.0.19](https://github.com/disafronov/semantic-release/compare/v2.0.18...v2.0.19) (2026-10-27)
 
 ### Bug Fixes
