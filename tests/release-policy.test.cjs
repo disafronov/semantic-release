@@ -128,7 +128,7 @@ test('default enables versioning only for complete manifest and lockfile pairs',
     for (const file of ['pyproject.toml', 'uv.lock', 'package.json', 'package-lock.json']) {
       try { require('node:fs').unlinkSync(path.join(dir, file)); } catch (error) { if (error.code !== 'ENOENT') throw error; }
     }
-    for (const file of files) writeFileSync(path.join(dir, file), '');
+    for (const file of files) writeFileSync(path.join(dir, file), file === 'package.json' ? '{}\n' : '');
     return JSON.parse(execFileSync(process.execPath, ['-e', `process.stdout.write(JSON.stringify(require(${JSON.stringify(path.join(root, 'default.releaserc.cjs'))})))`], {
       cwd: dir, env, encoding: 'utf8'
     }));
