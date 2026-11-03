@@ -1,3 +1,9 @@
+## [3.0.2](https://github.com/disafronov/semantic-release/compare/v3.0.1...v3.0.2) (2026-11-03)
+
+### Code Refactoring
+
+* deps ([da1ffd1](https://github.com/disafronov/semantic-release/commit/da1ffd1bad7ae6419818f8fa12d21b1d8f267192))
+
 ## [3.0.1](https://github.com/disafronov/semantic-release/compare/v3.0.0...v3.0.1) (2026-11-02)
 
 ### Code Refactoring
