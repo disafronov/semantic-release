@@ -1,3 +1,15 @@
+## [4.0.0](https://github.com/disafronov/semantic-release/compare/v3.0.2...v4.0.0) (2026-11-03)
+
+### ⚠ BREAKING CHANGES
+
+* The semantic workflow no longer automatically rebases open pull requests after a release. Consumers relying on automatic branch updates must manage them explicitly.
+
+Signed-off-by: [secure] <[secure]>
+
+### Code Refactoring
+
+* remove automatic post-release rebasing ([02aad5f](https://github.com/disafronov/semantic-release/commit/02aad5f2d073cca69aa6239568943ed5557e444b))
+
 ## [3.0.2](https://github.com/disafronov/semantic-release/compare/v3.0.1...v3.0.2) (2026-11-03)
 
 ### Code Refactoring

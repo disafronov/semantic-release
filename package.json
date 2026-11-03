@@ -1,6 +1,6 @@
 {
   "name": "semantic-release",
-  "version": "3.0.2",
+  "version": "4.0.0",
   "description": "Docker image for semantic-release with GitHub Actions",
   "main": "index.js",
   "scripts": {
