@@ -22,8 +22,7 @@ Docker image. The image itself does **not** publish packages to npm or PyPI.
   version files, writes `CHANGELOG.md` and a signed-off release commit, creates
   a version tag, and publishes a GitHub Release.
 - **Semantic workflow:** runs a dry-run on pull requests to `main` or `rc`,
-  and runs a release on pushes to those branches. After a release commit is
-  pushed to `main`, it also attempts to rebase eligible open pull requests.
+  and runs a release on pushes to those branches.
 - **Docker workflow (this repository):** builds and publishes a multi-platform
   image to GHCR on pull requests and version tags, then signs its digest with
   Cosign. This is separate from package publication in consumer repositories.
@@ -34,7 +33,7 @@ Docker image. The image itself does **not** publish packages to npm or PyPI.
 
 The [repository's semantic workflow](.github/workflows/semantic.yml) is the
 maintained integration example. The abbreviated example below shows the key
-requirements; it does not include the optional post-release rebase job.
+requirements.
 
 ```yaml
 name: Semantic
