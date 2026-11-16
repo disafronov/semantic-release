@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.13.8 AS uv
 
-FROM node:26.13.0-slim
+FROM node:26.13.1-slim
 
 COPY --from=uv /uv /uvx /usr/local/bin/
 
