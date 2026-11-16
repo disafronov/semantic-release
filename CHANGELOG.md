@@ -1,3 +1,9 @@
+## [4.0.1](https://github.com/disafronov/semantic-release/compare/v4.0.0...v4.0.1) (2026-11-16)
+
+### Code Refactoring
+
+* deps ([567774d](https://github.com/disafronov/semantic-release/commit/567774d91b8488d95ddeb94f3a631b4f89656bee))
+
 ## [4.0.0](https://github.com/disafronov/semantic-release/compare/v3.0.2...v4.0.0) (2026-11-03)
 
 ### ⚠ BREAKING CHANGES
