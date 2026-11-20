@@ -105,7 +105,11 @@ function ownArguments(argv) {
 function runUpstreamCli(args, cwd, env) {
   const result = spawnSync('semantic-release', args, { cwd, env, stdio: 'inherit' });
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error('semantic-release exited with status ' + result.status);
+  if (result.status !== 0) {
+    const error = new Error('semantic-release exited with status ' + result.status);
+    error.exitCode = result.status ?? 1;
+    throw error;
+  }
 }
 
 // The upstream CLI knows how to parse its own options. When the project has
@@ -224,7 +228,11 @@ async function validation(args, source, baseBranch, diffOutput) {
       'GL_TOKEN', 'GITLAB_TOKEN', 'BITBUCKET_TOKEN', 'BB_TOKEN_BASIC_AUTH',
       'GITHUB_EVENT_PATH', 'GITHUB_HEAD_REF', 'GITHUB_BASE_REF']) delete env[key];
 
+    const beforeTags = new Set(git(checkout, 'tag', '--list').split('\n').filter(Boolean));
     runUpstreamCli(args, checkout, env);
+    const createdTags = git(checkout, 'tag', '--list').split('\n').filter(
+      (tag) => tag && !beforeTags.has(tag));
+    console.log('Created tags: ' + (createdTags.join(', ') || 'none'));
     console.log('Validation passed (upstream CLI, local Git remote, no GitHub plugin).');
   } catch (error) {
     failed = error;
@@ -256,5 +264,5 @@ try {
   else await release(forwarded, process.cwd());
 } catch (error) {
   console.error(error);
-  process.exitCode = 1;
+  process.exitCode = error.exitCode ?? 1;
 }
