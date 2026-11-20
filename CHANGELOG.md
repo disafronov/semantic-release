@@ -1,3 +1,11 @@
+## [5.0.0-rc.3](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.2...v5.0.0-rc.3) (2026-11-20)
+
+### Bug Fixes
+
+* apply bundled release policy as runtime options in semantic-release 26 ([6f177f7](https://github.com/disafronov/semantic-release/commit/6f177f7fa8ba3c5fee4c303ca556d76d24bbbd7e))
+* invoke bundled configuration as runtime policy for fallback ([3c91e6e](https://github.com/disafronov/semantic-release/commit/3c91e6e06f833a3dff62cec94949a55a6c8c0e5d))
+* redact secret-bearing errors in the fallback runner ([a26d98c](https://github.com/disafronov/semantic-release/commit/a26d98c6f3add68dd6c1879db6e46983e059568e))
+
 ## [5.0.0-rc.2](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.1...v5.0.0-rc.2) (2026-11-20)
 
 ### Bug Fixes
