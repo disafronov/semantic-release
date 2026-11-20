@@ -121,11 +121,12 @@ async function validate() {
     const result = await runRelease({}, { cwd: source, env }, {
       fallback: bundled,
       transform: (options) => {
-        configuredPlugins = options.plugins.map(pluginName);
+        const plugins = options.plugins.filter(
+          (entry) => pluginName(entry) !== '@semantic-release/github');
+        configuredPlugins = plugins.map(pluginName);
         return {
           ...options,
-          plugins: options.plugins.filter(
-            (entry) => pluginName(entry) !== '@semantic-release/github'),
+          plugins,
           repositoryUrl: remote,
           dryRun: false,
           noCi: false,
@@ -134,7 +135,7 @@ async function validate() {
     });
 
     console.log('Validated release policy for ' + baseBranch + ' against actual release history');
-    console.log('Configured plugins: ' + configuredPlugins.join(', '));
+    console.log('Active plugins: ' + configuredPlugins.join(', '));
     console.log('Commits since last release: ' + (result?.commits?.length ?? 0));
     console.log('Next release: ' + (result?.nextRelease?.version ?? 'none'));
     console.log('Validation passed (real local prepare, local Git pushes, no external access).');
