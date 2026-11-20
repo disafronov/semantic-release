@@ -110,7 +110,7 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   assert.match(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/npm/);
   assert.match(result.output, /Next release: 1\.2\.4/);
-  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\\/exec"/);
+  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/exec"/);
   assert.match(result.output, /Validation passed/);
   assert.match(result.diff, /pyproject\.toml/);
   assert.match(result.diff, /1\.2\.4/);
@@ -134,7 +134,7 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
   assert.match(result.output, /Next release: 1\.2\.4/);
-  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\\/npm"/);
+  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/npm"/);
   assert.match(result.diff, /package\.json/);
   assert.match(result.diff, /1\.2\.4/);
   assert.match(result.tags, /v1\.2\.4/);
