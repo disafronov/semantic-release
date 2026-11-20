@@ -51,7 +51,7 @@ if ! has_local_config; then
   echo "No local semantic-release configuration found, using default"
   # In semantic-release 26, its built-in plugins override those from --extends.
   # Pass the bundled policy as runtime options so the full plugin configuration wins.
-  exec node "$(dirname "$0")/fallback-runner.mjs" "$@"
+  exec node "$(dirname "$0")/fallback-cli.mjs" "$@"
 fi
 
 exec semantic-release "$@"
