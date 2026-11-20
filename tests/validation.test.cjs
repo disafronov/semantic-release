@@ -32,6 +32,19 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const cwd = path.join(dir, 'project');
   const remote = path.join(dir, 'remote.git');
+  const fakeBin = path.join(dir, 'bin');
+  mkdirSync(fakeBin);
+  // Unit-test shim for the uv executable: the Docker image uses real uv.
+  const uvShim = [
+    '#!/usr/bin/env node',
+    "const fs = require('node:fs');",
+    'const [command, noSync, version] = process.argv.slice(2);',
+    "if (command !== 'version' || noSync !== '--no-sync' || !version) process.exit(2);",
+    "const p = fs.readFileSync('pyproject.toml', 'utf8');",
+    "fs.writeFileSync('pyproject.toml', p.replace(/version = \"[^\"]+\"/, 'version = \"' + version + '\"'));",
+    "fs.appendFileSync('uv.lock', '\\n# version ' + version + '\\n');",
+  ].join('\n') + '\n';
+  writeFileSync(path.join(fakeBin, 'uv'), uvShim, { mode: 0o755 });
   mkdirSync(cwd);
   git(dir, 'init', '--bare', remote);
   git(remote, 'symbolic-ref', 'HEAD', 'refs/heads/main');
@@ -59,18 +72,29 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
   // containing the target branch and the proposed changes.
   git(cwd, 'switch', '-c', 'pr-merge', 'origin/' + baseBranch);
   git(cwd, 'merge', '--no-ff', 'topic', '-m', 'Merge pull request #123');
-  const initialStatus = git(cwd, 'status', '--porcelain');
-  const initialTags = git(cwd, 'tag', '--list');
+  const originalMain = git(cwd, 'ls-remote', 'origin', 'refs/heads/main');
+  const originalRc = baseBranch === 'rc' ? git(cwd, 'ls-remote', 'origin', 'refs/heads/rc') : '';
+  const originalTags = git(cwd, 'ls-remote', '--tags', 'origin');
+  const baseline = git(cwd, 'rev-parse', 'HEAD');
   return {
     run(base = 'main') {
-      const result = spawnSync('/bin/sh', [path.join(root, 'semantic-release.sh'), '--validate', '--base-branch', base], {
-        cwd, env: { ...env, PATH: path.join(root, 'node_modules', '.bin') + ':' + process.env.PATH },
+      const result = spawnSync('/bin/sh', [
+        path.join(root, 'semantic-release.sh'), '--validate', '--base-branch', base,
+        '--diff-output', 'validation-artifacts/release.diff'
+      ], {
+        cwd, env: { ...env, PATH: fakeBin + ':' + path.join(root, 'node_modules', '.bin') + ':' + process.env.PATH },
         encoding: 'utf8', timeout: 30000,
       });
-      assert.equal(git(cwd, 'status', '--porcelain'), initialStatus, 'validation modified working files');
-      assert.equal(git(cwd, 'tag', '--list'), initialTags, 'validation created a release tag');
-      assert.deepEqual(readdirSync(cwd).sort(), ['.git', ...Object.keys(files), 'README.md'].sort());
-      return { ...result, output: result.stdout + result.stderr };
+      // Local commits and tags are expected. The real remote must be unchanged.
+      assert.equal(git(cwd, 'ls-remote', 'origin', 'refs/heads/main'), originalMain);
+      if (originalRc) assert.equal(git(cwd, 'ls-remote', 'origin', 'refs/heads/rc'), originalRc);
+      assert.equal(git(cwd, 'ls-remote', '--tags', 'origin'), originalTags);
+      const artifact = readFileSync(path.join(cwd, 'validation-artifacts', 'release.diff'), 'utf8');
+      return {
+        ...result, output: result.stdout + result.stderr,
+        diff: artifact, tags: git(cwd, 'tag', '--list'),
+        baseline, head: git(cwd, 'rev-parse', 'HEAD'),
+      };
     },
   };
 }
@@ -86,7 +110,13 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   assert.match(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/npm/);
   assert.match(result.output, /Next release: 1\.2\.4/);
+  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\\/exec"/);
   assert.match(result.output, /Validation passed/);
+  assert.match(result.diff, /pyproject\.toml/);
+  assert.match(result.diff, /1\.2\.4/);
+  assert.match(result.diff, /CHANGELOG\.md/);
+  assert.notEqual(result.head, result.baseline);
+  assert.match(result.tags, /v1\.2\.4/);
   assert.doesNotMatch(result.output, /configured to only publish from|triggered by a pull request/);
 });
 
@@ -104,6 +134,10 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
   assert.match(result.output, /Next release: 1\.2\.4/);
+  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\\/npm"/);
+  assert.match(result.diff, /package\.json/);
+  assert.match(result.diff, /1\.2\.4/);
+  assert.match(result.tags, /v1\.2\.4/);
 });
 
 test('PR validation uses upstream prerelease computation on rc with actual tag history', (t) => {
@@ -114,6 +148,8 @@ test('PR validation uses upstream prerelease computation on rc with actual tag h
   assert.match(result.output, /Found git tag v1\.2\.3 associated with version 1\.2\.3/);
   assert.match(result.output, /Next release: 1\.3\.0-rc\.1/);
   assert.match(result.output, /Validation passed/);
+  assert.match(result.tags, /v1\.3\.0-rc\.1/);
+  assert.match(result.diff, /CHANGELOG\.md/);
 });
 
 test('PR validation fails rather than inventing a release for malformed tags', (t) => {
@@ -138,6 +174,7 @@ test('PR validation checks non-releasing changes and rejects absent target branc
   const result = f.run();
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /Next release: none/);
+  assert.match(result.diff, /No local changes were produced/);
   const wrongBranch = f.run('rc');
   assert.notEqual(wrongBranch.status, 0, wrongBranch.output);
   assert.doesNotMatch(wrongBranch.output, /Validation passed/);
