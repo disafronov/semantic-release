@@ -62,7 +62,8 @@ jobs:
             --network none \
             --read-only \
             --tmpfs /tmp:rw,nosuid,size=64m,mode=1777 \
-            -v "${{ github.workspace }}:/workspace:ro" \
+            -v "${{ github.workspace }}:/workspace" \
+            -e SEMANTIC_RELEASE_DIFF_OUTPUT=/workspace/validation-artifacts/release.diff \
             -w /workspace \
             ghcr.io/disafronov/semantic-release:${{ vars.SEMANTIC_RELEASE_TAG || 'latest' }} \
             --validate --base-branch "${{ github.base_ref }}"
@@ -90,6 +91,8 @@ jobs:
         run: |
           docker run --rm \
             --user 1001 \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,size=128m,mode=1777 \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             -e GITHUB_TOKEN \
@@ -112,11 +115,15 @@ The `rc` branch is optional: the default policy uses it for prereleases only
 when it exists.
 
 The `--validate --base-branch main|rc` mode requires image v5.1.0 or newer.
-It resolves and loads the effective release policy, verifies local plugin
-conditions except GitHub authentication, analyzes real PR commits, and
-smoke-tests release notes for releasable changes. It does **not** run
-`prepare`, `publish`, or remote authentication. Only the push-triggered
-release job verifies the full publishing permissions and release procedure.
+It loads the same effective policy and runs through the same release runner,
+with `@semantic-release/github` removed and Git operations redirected to a
+local temporary `file://` remote. The validation container has no network and
+no release credentials. It runs real `prepare` steps (including uv, npm and
+changelog), creates local release commits and tags, then prints the resulting
+Git diff, including committed changes. Set `SEMANTIC_RELEASE_DIFF_OUTPUT` to
+save this diff for a workflow artifact. Other plugin network attempts fail in
+the isolated container. Only the push-triggered release job performs actual
+remote publishing and verifies GitHub publishing permissions.
 
 ## Environment variables
 
