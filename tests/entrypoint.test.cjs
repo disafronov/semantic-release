@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, chmodSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { createRequire } = require('node:module');
@@ -23,7 +23,6 @@ function fixture(t, files = {}) {
   mkdirSync(cwd);
   mkdirSync(bin);
   t.after(() => {
-    chmodSync(cwd, 0o755);
     rmSync(dir, { recursive: true, force: true });
   });
   for (const [name, content] of Object.entries(files)) {
@@ -163,4 +162,31 @@ test('fallback only consumes its own CLI flags and forwards upstream args unchan
   const args = ['--tag-format', 'release ${version} *', '--plugins', 'one,two', '--', 'literal'];
   assertInvocation(f.run(args), args, true);
   assert.deepEqual(readdirSync(f.cwd), []);
+});
+
+test('normal release forwards validation-only flag names verbatim', (t) => {
+  const f = fixture(t);
+  const args = ['--base-branch', 'main', '--diff-output', 'artifact.diff', '--dry-run'];
+  assertInvocation(f.run(args), args, true);
+});
+
+test('double dash prevents validator dispatch and preserves all upstream arguments', (t) => {
+  const f = fixture(t);
+  const args = ['--dry-run', '--', '--validate', '--base-branch', 'rc', '--debug'];
+  assertInvocation(f.run(args), args, true);
+});
+
+test('validation rejects incomplete local arguments before release invocation', (t) => {
+  const f = fixture(t);
+  for (const args of [
+    ['--validate'],
+    ['--validate', '--base-branch'],
+    ['--validate', '--base-branch', 'main', '--diff-output'],
+    ['--validate', '--base-branch=other'],
+  ]) {
+    const result = f.run(args);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Usage:|Missing value for/);
+    assert.equal(result.invocation, undefined);
+  }
 });

@@ -150,14 +150,17 @@ TypeScript configurations require the loader's optional `typescript` dependency.
 Only the top-level `release` property in `package.json` counts as configuration;
 an npm `scripts.release` entry does not.
 
-When no local configuration is found, the wrapper prints
-`No local semantic-release configuration found, using default` and invokes
-`fallback-runner.mjs`. This runner loads `fallback-config.cjs` and supplies
-its policy as runtime options to semantic-release 26, so the bundled plugin
-list takes precedence over semantic-release's built-in npm pipeline.
-It does not write a configuration file into the project.
-When local configuration exists, the wrapper invokes the normal
-`semantic-release` CLI instead.
+When no local configuration is found, the Node entrypoint prints
+`No local semantic-release configuration found, using default` and makes
+`fallback-config.cjs` available to the upstream semantic-release CLI as a
+temporary `.releaserc` in the project workspace. It removes that file
+after the CLI exits, including on failure. This explicit configuration
+takes precedence over semantic-release 26's built-in npm plugin list.
+A project with a local release configuration uses the upstream CLI unchanged.
+The runner handles only `--validate`, `--base-branch`, and `--diff-output`
+for validation; other arguments are forwarded verbatim to semantic-release,
+including arguments after `--`. The container starts Node directly; there is
+no shell entrypoint.
 
 The bundled policy is defined in [`fallback-config.cjs`](fallback-config.cjs).
 A local configuration replaces the automatic fallback. To change branches

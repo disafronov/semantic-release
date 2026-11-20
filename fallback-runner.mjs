@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const releaseRequire = createRequire(require.resolve('semantic-release'));
@@ -81,22 +81,38 @@ function releaseDiff(cwd, originalHead) {
 
 
 function ownArguments(argv) {
-  let validate = false;
+  // Parse only validation-specific options; the upstream CLI owns the rest.
+  // In particular, "--" and everything after it must be passed through.
+  const separator = argv.indexOf('--');
+  const beforeSeparator = separator < 0 ? argv : argv.slice(0, separator);
+  const validate = beforeSeparator.includes('--validate');
+  if (!validate) return { validate: false, forwarded: argv };
+
   let baseBranch;
   let diffOutput;
   const forwarded = [];
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--validate') {
-      validate = true;
-    } else if (argv[i] === '--base-branch') {
-      baseBranch = argv[++i];
-    } else if (argv[i] === '--diff-output') {
-      diffOutput = argv[++i];
-    } else {
-      forwarded.push(argv[i]);
+    const arg = argv[i];
+    if (arg === '--') {
+      forwarded.push(...argv.slice(i));
+      break;
     }
+    if (arg === '--validate') continue;
+
+    const flag = ['--base-branch', '--diff-output'].find(name =>
+      arg === name || arg.startsWith(name + '='));
+    if (!flag) {
+      forwarded.push(arg);
+      continue;
+    }
+    const value = arg === flag ? argv[++i] : arg.slice(flag.length + 1);
+    if (!value || value.startsWith('--')) {
+      throw new Error('Missing value for ' + flag);
+    }
+    if (flag === '--base-branch') baseBranch = value;
+    else diffOutput = value;
   }
-  if (validate && !['main', 'rc'].includes(baseBranch)) {
+  if (!['main', 'rc'].includes(baseBranch)) {
     throw new Error('Usage: --validate --base-branch <main|rc> [--diff-output <path>]');
   }
   return { validate, baseBranch, diffOutput, forwarded };
