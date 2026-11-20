@@ -243,4 +243,4 @@ Other projects can override the default through their own local
 configuration. The bundled policy retains the shared release rules,
 plugins and dynamic Git committer sign-off.
 
-<!-- refactor: deps 2 -->
+<!-- refactor: deps 3 -->
