@@ -182,43 +182,36 @@ async function validation(args, source, baseBranch, diffOutput) {
       }
     }
 
-    // cosmiconfig loads this temporary ESM policy through upstream CLI.
-    // It uses upstream's own resolver against the pristine original project,
-    // removes only GitHub integration, and restores the cloned files before
-    // plugins execute. Arbitrary local plugin overrides remain intact.
-    const sourcePath = JSON.stringify(source);
-    const policyPath = JSON.stringify(join(dirname(fileURLToPath(import.meta.url)), 'fallback-config.cjs'));
-    const tempPolicy = [
-      "import { createRequire } from 'node:module';",
-      "import { copyFileSync, unlinkSync } from 'node:fs';",
-      "import { join } from 'node:path';",
-      "import { pathToFileURL } from 'node:url';",
-      "const require = createRequire(" + JSON.stringify(import.meta.url) + ");",
-      "const releaseRequire = createRequire(require.resolve('semantic-release'));",
-      "const core = await import(pathToFileURL(releaseRequire.resolve('@semantic-release/core')).href);",
-      "const { SEMANTIC_RELEASE_DEFAULT_CONFIG } = await import('semantic-release/lib/definitions/constants.js');",
-      "const context = { cwd: " + sourcePath + ", env: process.env, stdout: process.stdout, stderr: process.stderr };",
-      "context.logger = core.getLogger(context);",
-      "let config;",
-      "try {",
-      "  const resolved = await core.resolveConfig(context, " +
-        (hasConfig ? '{}' : 'require(' + policyPath + ')') + ",",
-      "    { baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: false });",
-      "  const options = resolved.options;",
-      "  const pluginName = e => Array.isArray(e) ? e[0] : typeof e === 'object' ? e.path : e;",
-      "  const plugins = options.plugins.filter(e => pluginName(e) !== '@semantic-release/github');",
-      "  console.log('Active plugins: ' + plugins.map(pluginName).join(', '));",
-      "  config = { ...options, plugins, repositoryUrl: " + JSON.stringify(remote) + ", dryRun: false, noCi: false };",
-      "} finally {",
-      "  unlinkSync(join(process.cwd(), '.releaserc.mjs'));",
-      "  for (const name of " + JSON.stringify(removed) + ")",
-      "    copyFileSync(join(" + sourcePath + ", name), join(process.cwd(), name));",
-      modifiedPackage ? "  copyFileSync(join(" + sourcePath + ", 'package.json'), join(process.cwd(), 'package.json'));" : '',
-      "}",
-      "export default config;",
-      '',
+    // Resolve the actual effective config once, before invoking the original
+    // CLI. A synchronous CJS snapshot is sufficient for cosmiconfig's loader.
+    const core = await import(pathToFileURL(releaseRequire.resolve('@semantic-release/core')).href);
+    const { SEMANTIC_RELEASE_DEFAULT_CONFIG } = await import(
+      'semantic-release/lib/definitions/constants.js');
+    const context = { cwd: source, env: process.env, stdout: process.stdout, stderr: process.stderr };
+    context.logger = core.getLogger(context);
+    const { options } = await core.resolveConfig(context,
+      hasConfig ? {} : require('./fallback-config.cjs'),
+      { baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: false });
+    const plugins = options.plugins.filter(e => pluginName(e) !== '@semantic-release/github');
+    console.log('Active plugins: ' + plugins.map(pluginName).join(', '));
+    const effective = { ...options, plugins, repositoryUrl: remote, dryRun: false, noCi: false };
+
+    // The temporary policy erases itself and restores the original config
+    // before any semantic-release lifecycle plugin runs.
+    const clean = [
+      "const { copyFileSync, unlinkSync } = require('node:fs');",
+      "const { join } = require('node:path');",
+      "unlinkSync(__filename);",
+      "for (const name of " + JSON.stringify(removed) + ")",
+      "  copyFileSync(join(" + JSON.stringify(source) + ", name), join(process.cwd(), name));",
+      ...(modifiedPackage
+        ? ["copyFileSync(join(" + JSON.stringify(source) + ", 'package.json'), join(process.cwd(), 'package.json'));"]
+        : []),
     ].join('\n');
-    writeFileSync(join(checkout, '.releaserc.mjs'), tempPolicy);
+    // The CLI's config loader is synchronous; it cannot load async ESM.
+    const serialized = JSON.stringify(effective);
+    if (serialized === undefined) throw new Error('Release configuration cannot be serialized for CLI validation');
+    writeFileSync(join(checkout, '.releaserc.cjs'), clean + '\nmodule.exports = ' + serialized + ';\n');
 
     const env = {
       ...process.env, CI: 'true', GITHUB_ACTIONS: 'true',
