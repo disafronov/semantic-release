@@ -1,6 +1,5 @@
 *
 
-!/semantic-release.sh
 !/fallback-runner.mjs
 !/fallback-config.cjs
 !/package.json
