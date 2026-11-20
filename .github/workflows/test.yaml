@@ -25,8 +25,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Check shell syntax
-        run: sh -n semantic-release.sh
+      - name: Check Node entrypoint syntax
+        run: node --check fallback-runner.mjs
       - name: Prepare local release configuration
         run: cp fallback-config.cjs .releaserc.cjs
       - name: Test entrypoint
