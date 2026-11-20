@@ -1,3 +1,28 @@
+## [5.2.0-rc.1](https://github.com/disafronov/semantic-release/compare/v5.1.1...v5.2.0-rc.1) (2026-11-20)
+
+### Features
+
+* exercise real local release preparation and capture resulting diff ([c55cdd4](https://github.com/disafronov/semantic-release/commit/c55cdd4b52b4e57a88d255f4200f0edf789e306e))
+
+### Bug Fixes
+
+* accept diff output path through runner environment ([bf97412](https://github.com/disafronov/semantic-release/commit/bf97412ea3865686a9670e52f5b433fa70b163a6))
+* execute validation through the actual production release API ([97da8bd](https://github.com/disafronov/semantic-release/commit/97da8bd321fee8b71b35cf6bee20c11ce1f5bd19))
+* honor project-specific release plugin overrides during validation ([faf1d0c](https://github.com/disafronov/semantic-release/commit/faf1d0c911c3070ae0f48e66bf068eb305e49de3))
+* point isolated bare remote HEAD at target release branch ([1fb8b24](https://github.com/disafronov/semantic-release/commit/1fb8b24810999d87f162f203f1feabbeec136534))
+* report only active plugins during release validation ([662f152](https://github.com/disafronov/semantic-release/commit/662f152503e3acc81ab6dd5dd9136c511be4883b))
+* restore Docker workflow from semantic-docker-template ([f65efd8](https://github.com/disafronov/semantic-release/commit/f65efd8220a3bac34c5f2a859ad7773b976ad73c))
+* validate releases through upstream core in isolated Git sandbox ([6126d6e](https://github.com/disafronov/semantic-release/commit/6126d6e4b601f15e47e176cc4bf134122b4eaffa))
+
+### Code Refactoring
+
+* keep fallback runner focused on its production invocation ([4d1fe7c](https://github.com/disafronov/semantic-release/commit/4d1fe7c2f05c03a5f2eb1930803d39c5e95b6347))
+* keep validation overrides entirely in validator ([8628949](https://github.com/disafronov/semantic-release/commit/8628949d001dd2bf9baf836bb7613ff3c897cb77))
+* make fallback runner the single release invocation point ([f12b4db](https://github.com/disafronov/semantic-release/commit/f12b4db662860bf114da59135a52d95f3cc94e31))
+* name fallback policy consistently and harden release filesystem ([13546b4](https://github.com/disafronov/semantic-release/commit/13546b4c6f2a384b278ae39728045105ec61cb98))
+* route validation exclusively through shared release runner ([e914373](https://github.com/disafronov/semantic-release/commit/e914373b6c0f2756c2e399754565b99b24d359ec))
+* share actual fallback release invocation with validation ([d3786bb](https://github.com/disafronov/semantic-release/commit/d3786bba2d6e834b4e7026a7550c1cfea1a4f964))
+
 ## [5.1.1](https://github.com/disafronov/semantic-release/compare/v5.1.0...v5.1.1) (2026-11-20)
 
 ### Bug Fixes
