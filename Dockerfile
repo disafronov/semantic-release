@@ -40,8 +40,7 @@ RUN npm ci && \
 # Add node_modules/.bin to PATH
 ENV PATH="/opt/semantic-release/node_modules/.bin:${PATH}" \
     NODE_PATH="/opt/semantic-release/node_modules"
-ENV NODE_PATH="/opt/semantic-release/node_modules"
 
-# Add default semantic-release config and entrypoint wrapper
+# Add release policy and entrypoint
 COPY fallback-config.cjs fallback-runner.mjs ./
 ENTRYPOINT ["node", "/opt/semantic-release/fallback-runner.mjs"]
