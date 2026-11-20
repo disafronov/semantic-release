@@ -54,6 +54,9 @@ function createSandbox(source, baseBranch, root) {
     if (name !== baseBranch) git(work, 'push', 'origin', sha + ':refs/heads/' + name);
   }
   git(work, 'push', 'origin', 'HEAD:refs/heads/' + baseBranch);
+  // Git fetch <url> with no refspec uses the bare remote's HEAD.
+  // Without this, the real core fails before it can inspect release tags.
+  git(remote, 'symbolic-ref', 'HEAD', 'refs/heads/' + baseBranch);
   git(work, 'push', 'origin', '--tags');
 
   // Channel metadata is stored in Git notes, not just tag names. Carry any
