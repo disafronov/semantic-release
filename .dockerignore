@@ -1,7 +1,7 @@
 *
 
 !/semantic-release.sh
-!/fallback-release.mjs
+!/fallback-runner.mjs
 !/default.releaserc.cjs
 !/package.json
 !/package-lock.json

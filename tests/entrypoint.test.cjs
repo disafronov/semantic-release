@@ -35,7 +35,7 @@ function fixture(t, files = {}) {
   // Intercept only the fallback Node runner; delegate package inspection to real Node.
   writeFileSync(path.join(bin, 'node'), `#!${process.execPath}
 const { spawnSync } = require('node:child_process');
-if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-release.mjs'))}) {
+if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-runner.mjs'))}) {
   require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
     runner: 'fallback', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
   }));
