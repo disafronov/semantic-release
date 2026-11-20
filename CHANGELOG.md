@@ -1,3 +1,9 @@
+## [5.1.0](https://github.com/disafronov/semantic-release/compare/v5.0.0...v5.1.0) (2026-11-20)
+
+### Features
+
+* add read-only PR release validation mode ([69a7caf](https://github.com/disafronov/semantic-release/commit/69a7caf348e8f607283fc3f801aca02cbf7d600e))
+
 ## [5.0.0](https://github.com/disafronov/semantic-release/compare/v4.0.2...v5.0.0) (2026-11-20)
 
 ### ⚠ BREAKING CHANGES
