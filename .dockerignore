@@ -2,8 +2,6 @@
 
 !/semantic-release.sh
 !/fallback-runner.mjs
-!/fallback-cli.mjs
-!/validate-release.mjs
 !/fallback-config.cjs
 !/package.json
 !/package-lock.json
