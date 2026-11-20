@@ -42,5 +42,5 @@ ENV PATH="/opt/semantic-release/node_modules/.bin:${PATH}" \
     NODE_PATH="/opt/semantic-release/node_modules"
 
 # Add release policy and entrypoint
-COPY fallback-config.cjs fallback-runner.mjs ./
+COPY fallback-config.cjs fallback-runner.mjs detect-release-config.mjs validation-worker.mjs ./
 ENTRYPOINT ["node", "/opt/semantic-release/fallback-runner.mjs"]
