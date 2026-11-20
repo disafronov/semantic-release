@@ -191,7 +191,7 @@ for (const { branch, message, footer, expected, heading } of [
     git(cwd, 'commit', '-m', message, ...(footer ? ['-m', footer] : []));
     git(cwd, 'push', 'origin', branch);
 
-    const result = spawnSync('/bin/sh', [path.join(root, 'semantic-release.sh'), '--dry-run', '--no-ci'], {
+    const result = spawnSync(process.execPath, [path.join(root, 'fallback-runner.mjs'), '--dry-run', '--no-ci'], {
       cwd,
       encoding: 'utf8',
       env: {
@@ -255,7 +255,7 @@ for (const { kind, files, expected, excluded } of [
 
     // An unconfigured branch makes semantic-release exit after loading and
     // resolving the actual plugins, without any GitHub API calls or publishing.
-    const result = spawnSync('/bin/sh', [path.join(root, 'semantic-release.sh'), '--dry-run'], {
+    const result = spawnSync(process.execPath, [path.join(root, 'fallback-runner.mjs'), '--dry-run'], {
       cwd,
       encoding: 'utf8',
       env: {

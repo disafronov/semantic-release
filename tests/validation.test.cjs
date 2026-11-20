@@ -78,8 +78,8 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
   const baseline = git(cwd, 'rev-parse', 'HEAD');
   return {
     run(base = 'main') {
-      const result = spawnSync('/bin/sh', [
-        path.join(root, 'semantic-release.sh'), '--validate', '--base-branch', base,
+      const result = spawnSync(process.execPath, [
+        path.join(root, 'fallback-runner.mjs'), '--validate', '--base-branch', base,
         '--diff-output', 'validation-artifacts/release.diff'
       ], {
         cwd, env: { ...env, PATH: fakeBin + ':' + path.join(root, 'node_modules', '.bin') + ':' + process.env.PATH },
