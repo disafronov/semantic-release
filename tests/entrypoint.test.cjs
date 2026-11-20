@@ -8,7 +8,6 @@ const { test } = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const wrapper = path.join(root, 'semantic-release.sh');
-const defaultConfig = '/opt/semantic-release/default.releaserc.cjs';
 const message = 'No local semantic-release configuration found, using default';
 // Resolve the loader from semantic-release, including if npm stops hoisting it.
 const releaseRequire = createRequire(require.resolve('semantic-release'));
@@ -33,9 +32,21 @@ function fixture(t, files = {}) {
     writeFileSync(target, content);
   }
   writeFileSync(path.join(bin, 'git'), '#!/bin/sh\nexit "${GIT_STATUS:-0}"\n', { mode: 0o755 });
+  // Intercept only the fallback Node runner; delegate package inspection to real Node.
+  writeFileSync(path.join(bin, 'node'), `#!${process.execPath}
+const { spawnSync } = require('node:child_process');
+if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-release.mjs'))}) {
+  require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
+    runner: 'fallback', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
+  }));
+  process.exit(Number(process.env.RELEASE_STATUS || 0));
+}
+const child = spawnSync(process.execPath, process.argv.slice(2), { stdio: 'inherit', env: process.env });
+process.exit(child.status ?? 1);
+`, { mode: 0o755 });
   writeFileSync(path.join(bin, 'semantic-release'), `#!${process.execPath}
 require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
-  args: process.argv.slice(2), nodePath: process.env.NODE_PATH
+  runner: 'semantic-release', args: process.argv.slice(2), nodePath: process.env.NODE_PATH
 }));
 process.exit(Number(process.env.RELEASE_STATUS || 0));
 `, { mode: 0o755 });
@@ -54,7 +65,8 @@ process.exit(Number(process.env.RELEASE_STATUS || 0));
 
 function assertInvocation(result, args, fallback) {
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.invocation.args, fallback ? ['--extends', defaultConfig, ...args] : args);
+  assert.deepEqual(result.invocation.args, args);
+  assert.equal(result.invocation.runner, fallback ? 'fallback' : 'semantic-release');
   assert.equal(result.stdout, fallback ? `${message}\n` : '');
   assert.equal(result.stderr, '');
   assert.equal(result.invocation.nodePath, '/opt/semantic-release/node_modules:');
