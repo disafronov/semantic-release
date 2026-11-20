@@ -170,9 +170,11 @@ test('default enables versioning only for complete manifest and lockfile pairs',
  */
 for (const { branch, message, footer, expected, heading } of [
   { branch: 'main', message: 'refactor: simplify API', expected: '1.2.4', heading: 'Code Refactoring' },
+  { branch: 'main', message: 'feat: add capability', expected: '1.3.0', heading: 'Features' },
+  { branch: 'main', message: 'build(deps): bump package', expected: null },
   { branch: 'rc', message: 'feat!: change API', footer: 'BREAKING CHANGE: remove old API', expected: '2.0.0-rc.1', heading: 'BREAKING CHANGES' },
 ]) {
-  test(`real semantic-release dry-run on ${branch} calculates ${expected}`, (t) => {
+  test(`real semantic-release dry-run on ${branch} for ${message}`, (t) => {
     const { cwd, remote } = fixture(t);
     if (branch !== 'main') git(cwd, 'switch', '-c', branch);
 
@@ -204,8 +206,12 @@ for (const { branch, message, footer, expected, heading } of [
     });
     const output = result.stdout + result.stderr;
     assert.equal(result.status, 0, output);
-    assert.ok(output.includes(`Release ${expected} would be published`), output);
-    assert.ok(output.includes(heading), output);
-    assert.equal(git(cwd, 'ls-remote', '--tags', 'origin', `refs/tags/v${expected}`), '');
+    if (expected) {
+      assert.ok(output.includes(`Release ${expected} would be published`), output);
+      assert.ok(output.includes(heading), output);
+      assert.equal(git(cwd, 'ls-remote', '--tags', 'origin', `refs/tags/v${expected}`), '');
+    } else {
+      assert.ok(output.includes('There are no relevant changes, so no new version is released.'), output);
+    }
   });
 }
