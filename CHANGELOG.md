@@ -1,3 +1,9 @@
+## [5.1.1](https://github.com/disafronov/semantic-release/compare/v5.1.0...v5.1.1) (2026-11-20)
+
+### Bug Fixes
+
+* validate pull requests using the release policy verifier ([b7888ff](https://github.com/disafronov/semantic-release/commit/b7888ff782258af9668126eb322492db09d5bb42))
+
 ## [5.1.0](https://github.com/disafronov/semantic-release/compare/v5.0.0...v5.1.0) (2026-11-20)
 
 ### Features
