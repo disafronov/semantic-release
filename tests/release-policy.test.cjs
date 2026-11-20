@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
@@ -162,3 +162,50 @@ test('default enables versioning only for complete manifest and lockfile pairs',
     if (npm) assert.equal(config.plugins.find(([name]) => name === '@semantic-release/npm')[1].npmPublish, false);
   }
 });
+
+/*
+ * Exercise the real CLI, Git remote, commit analyzer and notes generator.
+ * Only network-dependent publishing plugins are omitted: dry runs must not
+ * attempt to contact GitHub or create releases.
+ */
+for (const { branch, message, footer, expected, heading } of [
+  { branch: 'main', message: 'refactor: simplify API', expected: '1.2.4', heading: 'Code Refactoring' },
+  { branch: 'rc', message: 'feat!: change API', footer: 'BREAKING CHANGE: remove old API', expected: '2.0.0-rc.1', heading: 'BREAKING CHANGES' },
+]) {
+  test(`real semantic-release dry-run on ${branch} calculates ${expected}`, (t) => {
+    const { cwd, remote } = fixture(t);
+    if (branch !== 'main') git(cwd, 'switch', '-c', branch);
+
+    // Inherit the actual bundled policy, rather than duplicating its rules.
+    // Exclude only plugins that modify files, publish to GitHub, or require credentials.
+    const localConfig = [
+      `const policy = require(${JSON.stringify(path.join(root, 'default.releaserc.cjs'))});`,
+      `module.exports = { ...policy, repositoryUrl: ${JSON.stringify(pathToFileURL(remote).href)},`,
+      "  plugins: policy.plugins.filter(([name]) => ['@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator'].includes(name)) };",
+    ].join('\n');
+    writeFileSync(path.join(cwd, '.releaserc.cjs'), localConfig);
+    writeFileSync(path.join(cwd, 'README.md'), 'updated fixture\n');
+    git(cwd, 'add', '.');
+    git(cwd, 'commit', '-m', message, ...(footer ? ['-m', footer] : []));
+    git(cwd, 'push', 'origin', branch);
+
+    const result = spawnSync('/bin/sh', [path.join(root, 'semantic-release.sh'), '--dry-run', '--no-ci'], {
+      cwd,
+      encoding: 'utf8',
+      env: {
+        ...env,
+        PATH: `${path.join(root, 'node_modules', '.bin')}:${process.env.PATH}`,
+        CI: 'true',
+        GITHUB_ACTIONS: 'true',
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF: `refs/heads/${branch}`,
+        GITHUB_SHA: git(cwd, 'rev-parse', 'HEAD'),
+      },
+    });
+    const output = result.stdout + result.stderr;
+    assert.equal(result.status, 0, output);
+    assert.ok(output.includes(`Release ${expected} would be published`), output);
+    assert.ok(output.includes(heading), output);
+    assert.equal(git(cwd, 'ls-remote', '--tags', 'origin', `refs/tags/v${expected}`), '');
+  });
+}
