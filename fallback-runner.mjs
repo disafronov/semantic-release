@@ -1,20 +1,45 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 import semanticRelease from 'semantic-release';
+import { SEMANTIC_RELEASE_DEFAULT_CONFIG } from 'semantic-release/lib/definitions/constants.js';
 import hideSensitive from 'semantic-release/lib/hide-sensitive.js';
 import util from 'node:util';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 const require = createRequire(import.meta.url);
-// The same runtime composition is invoked by normal release and validation.
+const releaseRequire = createRequire(require.resolve('semantic-release'));
+const core = await import(pathToFileURL(releaseRequire.resolve('@semantic-release/core')).href);
+// Normal release and validation share this invocation, including the
+// semantic-release 26 workaround that gives the fallback policy precedence.
 export function bundledReleaseOptions(options = {}) {
   return { ...require('./fallback-config.cjs'), ...options };
 }
+
+export async function runRelease(options = {}, runtime = {}, { fallback = false, transform } = {}) {
+  const invocation = fallback ? bundledReleaseOptions(options) : options;
+  if (!transform) return semanticRelease(invocation, runtime);
+
+  // Resolve the real effective configuration (including extends), then apply
+  // validation-only overrides before invoking the exact same public API.
+  const context = {
+    cwd: runtime.cwd ?? process.cwd(),
+    env: runtime.env ?? process.env,
+    stdout: runtime.stdout ?? process.stdout,
+    stderr: runtime.stderr ?? process.stderr,
+  };
+  context.logger = core.getLogger(context);
+  const resolved = await core.resolveConfig(context, invocation, {
+    baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG,
+    buildPlugins: false,
+  });
+  return semanticRelease(transform(resolved.options), runtime);
+}
+
 export function runBundledRelease(options = {}, runtime = {}) {
-  return semanticRelease(bundledReleaseOptions(options), runtime);
+  return runRelease(options, runtime, { fallback: true });
 }
 const list = { type: 'string', array: true, coerce: values =>
   values.length === 1 && values[0].trim() === 'false'
