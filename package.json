@@ -21,7 +21,7 @@
     "semantic-release": "./node_modules/.bin/semantic-release"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=26.13.0"
   },
   "keywords": [
     "semantic-release",
