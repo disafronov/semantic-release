@@ -7,6 +7,60 @@
 ### Bug Fixes
 
 * accept diff output path through runner environment ([bf97412](https://github.com/disafronov/semantic-release/commit/bf97412ea3865686a9670e52f5b433fa70b163a6))
+* avoid duplicate NODE_PATH declaration in image ([c272da3](https://github.com/disafronov/semantic-release/commit/c272da39294211bb3bf982649476123c2b207be3))
+* create synchronous CLI release policy for validation ([a55e6d1](https://github.com/disafronov/semantic-release/commit/a55e6d1ab41a0485543a6eee4c42d9a980fc9990))
+* execute validation through the actual production release API ([97da8bd](https://github.com/disafronov/semantic-release/commit/97da8bd321fee8b71b35cf6bee20c11ce1f5bd19))
+* honor project-specific release plugin overrides during validation ([faf1d0c](https://github.com/disafronov/semantic-release/commit/faf1d0c911c3070ae0f48e66bf068eb305e49de3))
+* invoke the fallback CLI adapter while keeping release runtime minimal ([f13a89f](https://github.com/disafronov/semantic-release/commit/f13a89f67b9f5ce4c5597a12386b6a8a50c682a2))
+* invoke the fallback CLI adapter while keeping release runtime minimal ([0a52db7](https://github.com/disafronov/semantic-release/commit/0a52db77ba969b25d7afcaba3b78b3e54d04a9bc))
+* invoke the fallback CLI adapter while keeping release runtime minimal ([1786e71](https://github.com/disafronov/semantic-release/commit/1786e7129d8fb76e80b4c2e161330a20c2083dda))
+* invoke the fallback CLI adapter while keeping release runtime minimal ([d17f625](https://github.com/disafronov/semantic-release/commit/d17f62544dabed5d3635e72c013d1049b778538d))
+* keep CLI argument compatibility outside the fallback runner ([371eb6b](https://github.com/disafronov/semantic-release/commit/371eb6b67646d69949374aa347cd916e9bfd257c))
+* keep validation policy filtering in the validator only ([a8b81d9](https://github.com/disafronov/semantic-release/commit/a8b81d943e35c361e6ce744488cad84555be947a))
+* log fallback policy selection during validation ([8314bb9](https://github.com/disafronov/semantic-release/commit/8314bb9a75f3a55fb957e9b2dc88071c46d5439e))
+* point isolated bare remote HEAD at target release branch ([1fb8b24](https://github.com/disafronov/semantic-release/commit/1fb8b24810999d87f162f203f1feabbeec136534))
+* preserve config-file detection when delegating to upstream CLI ([b354eea](https://github.com/disafronov/semantic-release/commit/b354eeaedbe10158249ba1f46dbab9abd7c82657))
+* report actual created tags and propagate upstream CLI exit code ([a9826cb](https://github.com/disafronov/semantic-release/commit/a9826cbd4dc25d2ba42ec1e5b57e85b0577cf14b))
+* report only active plugins during release validation ([662f152](https://github.com/disafronov/semantic-release/commit/662f152503e3acc81ab6dd5dd9136c511be4883b))
+* restore Docker workflow from semantic-docker-template ([f65efd8](https://github.com/disafronov/semantic-release/commit/f65efd8220a3bac34c5f2a859ad7773b976ad73c))
+* validate PRs with their own checked-out container image ([d89440e](https://github.com/disafronov/semantic-release/commit/d89440ee9dd28461ed7d70ba897f5b80cf4b3329))
+* validate releases through upstream core in isolated Git sandbox ([6126d6e](https://github.com/disafronov/semantic-release/commit/6126d6e4b601f15e47e176cc4bf134122b4eaffa))
+
+### Reverts
+
+* leave Semantic workflow unchanged ([be36ccc](https://github.com/disafronov/semantic-release/commit/be36ccc8380feba29e7721496b00c0d5a7f4bbae))
+
+### Code Refactoring
+
+* centralize release configuration loading in fallback runner ([40e0c21](https://github.com/disafronov/semantic-release/commit/40e0c21fd63544ec80d41eedf517470b6cce2ffa))
+* consolidate release invocation and validation in fallback runner ([f0052f6](https://github.com/disafronov/semantic-release/commit/f0052f6a2bf91555232625656a2e8fd3e5b919a1))
+* consolidate release invocation and validation in fallback runner ([be2b104](https://github.com/disafronov/semantic-release/commit/be2b104e34334b8a1e79205c4c618f5e8990f951))
+* keep fallback runner focused on its production invocation ([4d1fe7c](https://github.com/disafronov/semantic-release/commit/4d1fe7c2f05c03a5f2eb1930803d39c5e95b6347))
+* keep validation overrides entirely in validator ([8628949](https://github.com/disafronov/semantic-release/commit/8628949d001dd2bf9baf836bb7613ff3c897cb77))
+* make fallback runner a minimal config adapter ([5c8a599](https://github.com/disafronov/semantic-release/commit/5c8a59965eaccfb44876373e0c0c0a97fcb5c9fc))
+* make fallback runner the single release invocation point ([f12b4db](https://github.com/disafronov/semantic-release/commit/f12b4db662860bf114da59135a52d95f3cc94e31))
+* make Node runner the sole entrypoint and preserve upstream CLI arguments ([58bffa4](https://github.com/disafronov/semantic-release/commit/58bffa48914604ba3beb058174857dffd59536e5))
+* name fallback policy consistently and harden release filesystem ([13546b4](https://github.com/disafronov/semantic-release/commit/13546b4c6f2a384b278ae39728045105ec61cb98))
+* remove retired release entrypoints from packaging ([77dd077](https://github.com/disafronov/semantic-release/commit/77dd0777e5c4c8162aea4493dee0db5f2741ede2))
+* remove retired release entrypoints from packaging ([4876823](https://github.com/disafronov/semantic-release/commit/4876823fa6ebe960df82e11fc0ad030d2263236a))
+* remove retired release entrypoints from packaging ([7259ce0](https://github.com/disafronov/semantic-release/commit/7259ce0a9107086eb4a04133de47d96dad08e092))
+* route validation exclusively through shared release runner ([e914373](https://github.com/disafronov/semantic-release/commit/e914373b6c0f2756c2e399754565b99b24d359ec))
+* run Node release entrypoint directly from Docker ([c5c68b0](https://github.com/disafronov/semantic-release/commit/c5c68b008fec036ea38d9604b527d9fb72be2370))
+* run release worker directly as Docker entrypoint ([42563dc](https://github.com/disafronov/semantic-release/commit/42563dcac874e52aad3d8185e5af330b19548789))
+* share actual fallback release invocation with validation ([d3786bb](https://github.com/disafronov/semantic-release/commit/d3786bba2d6e834b4e7026a7550c1cfea1a4f964))
+* use fallback runner as the sole release entrypoint ([abea897](https://github.com/disafronov/semantic-release/commit/abea897399ead6ab008d4703b8a6ce027593784a))
+* use upstream semantic-release CLI from a single release entrypoint ([1fa25cd](https://github.com/disafronov/semantic-release/commit/1fa25cd926638c89428301a368feaac9992410df))
+* validator delegates policy loading and invocation to fallback runner ([2fa1ddd](https://github.com/disafronov/semantic-release/commit/2fa1ddd58b50da7f044af6496b55665e788fd210))
+
+## [5.2.0-rc.1](https://github.com/disafronov/semantic-release/compare/v5.1.1...v5.2.0-rc.1) (2026-11-20)
+
+### Features
+
+* exercise real local release preparation and capture resulting diff ([c55cdd4](https://github.com/disafronov/semantic-release/commit/c55cdd4b52b4e57a88d255f4200f0edf789e306e))
+
+### Bug Fixes
+
+* accept diff output path through runner environment ([bf97412](https://github.com/disafronov/semantic-release/commit/bf97412ea3865686a9670e52f5b433fa70b163a6))
 * execute validation through the actual production release API ([97da8bd](https://github.com/disafronov/semantic-release/commit/97da8bd321fee8b71b35cf6bee20c11ce1f5bd19))
 * honor project-specific release plugin overrides during validation ([faf1d0c](https://github.com/disafronov/semantic-release/commit/faf1d0c911c3070ae0f48e66bf068eb305e49de3))
 * point isolated bare remote HEAD at target release branch ([1fb8b24](https://github.com/disafronov/semantic-release/commit/1fb8b24810999d87f162f203f1feabbeec136534))
