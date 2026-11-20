@@ -5,6 +5,7 @@
 !/.dockerignore
 !/.gitignore
 !/fallback-config.cjs
+!/fallback-cli.mjs
 !/Dockerfile
 !/LICENSE
 !/package-lock.json
