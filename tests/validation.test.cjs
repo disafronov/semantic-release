@@ -92,7 +92,8 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
       const artifact = readFileSync(path.join(cwd, 'validation-artifacts', 'release.diff'), 'utf8');
       return {
         ...result, output: result.stdout + result.stderr,
-        diff: artifact, tags: git(cwd, 'tag', '--list'),
+        diff: artifact,
+        tags: ((result.stdout + result.stderr).match(/Created tags: ([^\n]*)/)?.[1] ?? ''),
         baseline, head: git(cwd, 'rev-parse', 'HEAD'),
       };
     },
@@ -111,13 +112,13 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/github/);
   assert.doesNotMatch(result.output, /Loaded plugin .*@semantic-release\/github/);
   assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/npm/);
-  assert.match(result.output, /Next release: 1\.2\.4/);
+  assert.match(result.output, /Created tags: v1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/exec"/);
   assert.match(result.output, /Validation passed/);
   assert.match(result.diff, /pyproject\.toml/);
   assert.match(result.diff, /1\.2\.4/);
   assert.match(result.diff, /CHANGELOG\.md/);
-  assert.notEqual(result.head, result.baseline);
+  assert.equal(result.head, result.baseline); // Validation runs in an isolated checkout.
   assert.match(result.tags, /v1\.2\.4/);
   assert.doesNotMatch(result.output, /configured to only publish from|triggered by a pull request/);
 });
@@ -135,7 +136,7 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   assert.match(result.output, /Active plugins:.*@semantic-release\/npm/);
   assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/exec/);
   assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
-  assert.match(result.output, /Next release: 1\.2\.4/);
+  assert.match(result.output, /Created tags: v1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/npm"/);
   assert.match(result.diff, /package\.json/);
   assert.match(result.diff, /1\.2\.4/);
@@ -148,7 +149,7 @@ test('PR validation uses upstream prerelease computation on rc with actual tag h
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /Run automated release from branch rc/);
   assert.match(result.output, /Found git tag v1\.2\.3 associated with version 1\.2\.3/);
-  assert.match(result.output, /Next release: 1\.3\.0-rc\.1/);
+  assert.match(result.output, /Created tags: v1\.3\.0-rc\.1/);
   assert.match(result.output, /Validation passed/);
   assert.match(result.tags, /v1\.3\.0-rc\.1/);
   assert.match(result.diff, /CHANGELOG\.md/);
@@ -196,7 +197,7 @@ test('PR validation checks non-releasing changes and rejects absent target branc
   const f = fixture(t, {}, 'chore: update pipeline');
   const result = f.run();
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /Next release: none/);
+  assert.match(result.output, /Created tags: none/);
   assert.match(result.diff, /No local changes were produced/);
   const wrongBranch = f.run('rc');
   assert.notEqual(wrongBranch.status, 0, wrongBranch.output);
