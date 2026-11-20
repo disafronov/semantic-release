@@ -117,7 +117,7 @@ test('PR validation uses upstream prerelease computation on rc with actual tag h
 });
 
 test('PR validation fails rather than inventing a release for malformed tags', (t) => {
-  const f = fixture(t, { '.releaserc.cjs': "module.exports = { branches: ['main'], tagFormat: 'invalid', plugins: ['@semantic-release/commit-analyzer'] };\\n" });
+  const f = fixture(t, { '.releaserc.cjs': "module.exports = { branches: ['main'], tagFormat: 'invalid', plugins: ['@semantic-release/commit-analyzer'] };\n" });
   const result = f.run();
   assert.notEqual(result.status, 0, result.output);
   assert.match(result.output, /ETAGNOVERSION|EINVALIDTAGFORMAT/);
