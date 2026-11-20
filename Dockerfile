@@ -38,7 +38,8 @@ RUN npm ci && \
     npm cache clean --force
 
 # Add node_modules/.bin to PATH
-ENV PATH="/opt/semantic-release/node_modules/.bin:${PATH}"
+ENV PATH="/opt/semantic-release/node_modules/.bin:${PATH}" \
+    NODE_PATH="/opt/semantic-release/node_modules"
 ENV NODE_PATH="/opt/semantic-release/node_modules"
 
 # Add default semantic-release config and entrypoint wrapper
