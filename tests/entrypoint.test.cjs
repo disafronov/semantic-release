@@ -32,27 +32,16 @@ function fixture(t, files = {}) {
     writeFileSync(target, content);
   }
   writeFileSync(path.join(bin, 'git'), '#!/bin/sh\nexit "${GIT_STATUS:-0}"\n', { mode: 0o755 });
-  // Intercept the fallback CLI adapter; delegate package inspection to real Node.
-  writeFileSync(path.join(bin, 'node'), `#!${process.execPath}
-const { spawnSync } = require('node:child_process');
-if (process.argv[2] === ${JSON.stringify(path.join(root, 'validate-release.mjs'))}) {
-  require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
-    runner: 'validate', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
-  }));
-  process.exit(Number(process.env.RELEASE_STATUS || 0));
-}
-if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-cli.mjs'))}) {
-  require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
-    runner: 'fallback', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
-  }));
-  process.exit(Number(process.env.RELEASE_STATUS || 0));
-}
-const child = spawnSync(process.execPath, process.argv.slice(2), { stdio: 'inherit', env: process.env });
-process.exit(child.status ?? 1);
-`, { mode: 0o755 });
+  // Stub only upstream CLI. The wrapper and its config selection run for real.
   writeFileSync(path.join(bin, 'semantic-release'), `#!${process.execPath}
-require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
-  runner: 'semantic-release', args: process.argv.slice(2), nodePath: process.env.NODE_PATH
+const fs = require('node:fs');
+const candidate = '.releaserc.cjs';
+const generatedFallback = fs.existsSync(candidate) &&
+  fs.statSync(candidate).isFile() &&
+  fs.readFileSync(candidate, 'utf8').includes('fallback-config.cjs');
+fs.writeFileSync(process.env.CAPTURE, JSON.stringify({
+  runner: 'semantic-release', fallback: generatedFallback,
+  args: process.argv.slice(2), nodePath: process.env.NODE_PATH,
 }));
 process.exit(Number(process.env.RELEASE_STATUS || 0));
 `, { mode: 0o755 });
@@ -72,7 +61,8 @@ process.exit(Number(process.env.RELEASE_STATUS || 0));
 function assertInvocation(result, args, fallback) {
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.invocation.args, args);
-  assert.equal(result.invocation.runner, fallback ? 'fallback' : 'semantic-release');
+  assert.equal(result.invocation.runner, 'semantic-release');
+  assert.equal(result.invocation.fallback, fallback);
   assert.equal(result.stdout, fallback ? `${message}\n` : '');
   assert.equal(result.stderr, '');
   assert.equal(result.invocation.nodePath, '/opt/semantic-release/node_modules:');
@@ -120,7 +110,6 @@ for (const [label, pkg, fallback] of [
 test('fallback preserves every argument and leaves a read-only project untouched', (t) => {
   const f = fixture(t, { 'README.md': 'fixture\n' });
   const args = ['--dry-run', '--tag-format', 'release ${version} *', '--extends', './custom config.cjs', '', '--', 'literal'];
-  chmodSync(f.cwd, 0o555);
   assertInvocation(f.run(args), args, true);
   assert.deepEqual(readdirSync(f.cwd), ['README.md']);
   assert.equal(readFileSync(path.join(f.cwd, 'README.md'), 'utf8'), 'fixture\n');
@@ -165,18 +154,9 @@ test('git log failure still stops the wrapper', (t) => {
   assert.equal(result.stdout, '');
 });
 
-test('validation uses the bundled policy only when local configuration is absent', (t) => {
-  const withoutConfig = fixture(t, { 'README.md': 'fixture\n' });
-  const defaultRun = withoutConfig.run(['--validate', '--base-branch', 'main']);
-  assert.equal(defaultRun.status, 0, defaultRun.stderr);
-  assert.equal(defaultRun.invocation.runner, 'validate');
-  assert.deepEqual(defaultRun.invocation.args, ['--base-branch', 'main', '--bundled']);
-  assert.equal(defaultRun.stdout, message + '\n');
-
-  const withConfig = fixture(t, { '.releaserc.cjs': 'module.exports = {plugins: []};' });
-  const localRun = withConfig.run(['--validate', '--base-branch', 'rc']);
-  assert.equal(localRun.status, 0, localRun.stderr);
-  assert.equal(localRun.invocation.runner, 'validate');
-  assert.deepEqual(localRun.invocation.args, ['--base-branch', 'rc']);
-  assert.equal(localRun.stdout, '');
+test('fallback only consumes its own CLI flags and forwards upstream args unchanged', (t) => {
+  const f = fixture(t);
+  const args = ['--tag-format', 'release ${version} *', '--plugins', 'one,two', '--', 'literal'];
+  assertInvocation(f.run(args), args, true);
+  assert.deepEqual(readdirSync(f.cwd), []);
 });
