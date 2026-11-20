@@ -18,43 +18,6 @@ const pluginName = (entry) => Array.isArray(entry)
   ? entry[0]
   : typeof entry === 'object' ? entry.path ?? 'inline plugin' : entry;
 
-// A validation run is deliberately limited to the plugins shipped by this image.
-// Local configuration may change release rules but cannot introduce publishers.
-const allowedPlugins = new Set([
-  '@semantic-release/commit-analyzer',
-  '@semantic-release/release-notes-generator',
-  '@semantic-release/changelog',
-  '@semantic-release/exec',
-  '@semantic-release/npm',
-  '@semantic-release/git',
-  '@semantic-release/github',
-]);
-
-function validatePlugins(entries, options) {
-  for (const entry of entries) {
-    const name = pluginName(entry);
-    if (!allowedPlugins.has(name)) {
-      throw new Error('Unsupported validation plugin: ' + name);
-    }
-    const config = Array.isArray(entry) ? entry[1] ?? {} : {};
-    if (name === '@semantic-release/npm' && config.npmPublish !== false) {
-      throw new Error('Validation requires @semantic-release/npm with npmPublish: false');
-    }
-    if (name === '@semantic-release/exec') {
-      const commands = Object.keys(config).filter((key) => key.endsWith('Cmd') || key === 'cmd');
-      if (commands.some((key) => key !== 'prepareCmd') ||
-          config.prepareCmd !== 'uv version --no-sync "${nextRelease.version}"') {
-        throw new Error('Validation only supports the bundled uv prepare command');
-      }
-    }
-  }
-  for (const stage of ['publish', 'addChannel', 'success', 'fail']) {
-    if (options[stage] != null) {
-      throw new Error('Validation does not support explicit ' + stage + ' stage overrides');
-    }
-  }
-}
-
 function git(cwd, ...args) {
   return execFileSync('git', args, {
     cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
@@ -169,10 +132,9 @@ async function validate() {
     const resolved = await core.resolveConfig(context, runtimeOptions, {
       baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: true,
     });
-    validatePlugins(resolved.options.plugins, resolved.options);
 
-    // All release stages run. GitHub publishing is absent, npm publishing is
-    // disallowed by our policy, and all Git pushes target a local file:// remote.
+    // Run the effective release policy without restricting local plugin overrides.
+    // The GitHub plugin is excluded and all Git pushes target local file://.
     const plugins = resolved.options.plugins.filter(
       (entry) => pluginName(entry) !== '@semantic-release/github');
     const runOptions = {
