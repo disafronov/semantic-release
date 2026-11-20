@@ -1,3 +1,13 @@
+## [5.2.1-rc.2](https://github.com/disafronov/semantic-release/compare/v5.2.1-rc.1...v5.2.1-rc.2) (2026-11-20)
+
+### Bug Fixes
+
+* fetch semantic-release channel notes before PR validation ([2ea55e5](https://github.com/disafronov/semantic-release/commit/2ea55e5d63965ea0eecf8fede6fd620088126d54))
+
+### Code Refactoring
+
+* deps ([f40aecc](https://github.com/disafronov/semantic-release/commit/f40aecc1834b7320119827714a50e275651c13d6))
+
 ## [5.2.1-rc.1](https://github.com/disafronov/semantic-release/compare/v5.2.0...v5.2.1-rc.1) (2026-11-20)
 
 ### Code Refactoring
