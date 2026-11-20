@@ -1,3 +1,9 @@
+## [4.0.3-rc.1](https://github.com/disafronov/semantic-release/compare/v4.0.2...v4.0.3-rc.1) (2026-11-20)
+
+### Code Refactoring
+
+* audit ([243e8ae](https://github.com/disafronov/semantic-release/commit/243e8ae620bf6e4f07caf90bb8cd7d30319b7568))
+
 ## [4.0.2](https://github.com/disafronov/semantic-release/compare/v4.0.1...v4.0.2) (2026-11-18)
 
 ### Code Refactoring
