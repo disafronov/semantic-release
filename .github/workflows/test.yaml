@@ -27,7 +27,5 @@ jobs:
         run: npm ci
       - name: Check Node entrypoint syntax
         run: node --check fallback-runner.mjs
-      - name: Prepare local release configuration
-        run: cp fallback-config.cjs .releaserc.cjs
       - name: Test entrypoint
         run: npm test
