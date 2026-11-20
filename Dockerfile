@@ -9,8 +9,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
       git-core \
+      openssh-client \
       ca-certificates && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    ssh -V
 
 ARG NODE_ENV=production
 ENV NODE_ENV=$NODE_ENV
