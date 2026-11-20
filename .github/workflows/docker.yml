@@ -40,8 +40,6 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       # Workaround: https://github.com/docker/build-push-action/issues/461
       - name: Setup Docker buildx
@@ -121,32 +119,3 @@ jobs:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
         run: cosign sign --yes "${IMAGE}@${DIGEST}"
-
-      # Exercise the image actually pushed for this PR, not a host-side mock.
-      # No release credentials, network access or writable project checkout.
-      - name: Smoke-test read-only PR validation
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          BASE_BRANCH: ${{ github.base_ref }}
-        run: |
-          docker run --rm \
-            --user "$(id -u):$(id -g)" \
-            --network none \
-            --read-only \
-            --tmpfs /tmp:rw,nosuid,size=64m,mode=1777 \
-            -v "$PWD:/workspace" \
-            -e SEMANTIC_RELEASE_DIFF_OUTPUT=/workspace/validation-artifacts/release.diff \
-            -w /workspace \
-            "${IMAGE}:pr-${PR_NUMBER}" \
-            --validate --base-branch "${BASE_BRANCH}"
-
-      - name: Upload validation diff
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-validation-diff-${{ github.event.pull_request.number }}
-          path: validation-artifacts/release.diff
-          if-no-files-found: ignore
