@@ -3,12 +3,16 @@ const { execFileSync } = require('node:child_process');
 const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
+const { createRequire } = require('node:module');
 const { Writable } = require('node:stream');
 const { pathToFileURL } = require('node:url');
 const { test } = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const upstream = path.dirname(require.resolve('semantic-release'));
+// semantic-release 26 delegates release orchestration to @semantic-release/core.
+// Resolve it from the installed semantic-release package to match its dependency tree.
+const releaseRequire = createRequire(require.resolve('semantic-release'));
+const upstream = path.dirname(releaseRequire.resolve('@semantic-release/core'));
 const logger = { log() {}, error() {}, warn() {}, success() {}, scope() { return this; } };
 const env = {
   ...process.env, GIT_ALLOW_PROTOCOL: 'file',
@@ -72,8 +76,12 @@ test('bundled configuration derives sign-off from the actual Git committer', () 
 
 test('actual semantic-release loader resolves the bundled default and every plugin', async (t) => {
   const { context } = fixture(t);
-  const getConfig = await library('get-config.js');
-  const { options, plugins } = await getConfig(context, { extends: [path.join(root, 'default.releaserc.cjs')] });
+  const resolveConfig = await library('resolve-config.js');
+  const { options, plugins } = await resolveConfig(
+    context,
+    { extends: [path.join(root, 'default.releaserc.cjs')] },
+    { buildPlugins: true }
+  );
   assert.deepEqual(options.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
   assert.equal(options.plugins.length, 6);
   assert.equal(typeof plugins.prepare, 'function');
