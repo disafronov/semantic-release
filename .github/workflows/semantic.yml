@@ -34,6 +34,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Build validation image from PR checkout
+        run: docker build --tag semantic-release:validation .
+
       - name: Validate release policy and PR commits
         run: |
           docker run --rm \
@@ -44,7 +47,7 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -e SEMANTIC_RELEASE_DIFF_OUTPUT=/workspace/validation-artifacts/release.diff \
             -w /workspace \
-            ${{ vars.SEMANTIC_RELEASE_IMAGE || 'ghcr.io/disafronov/semantic-release' }}:${{ vars.SEMANTIC_RELEASE_TAG || 'latest' }} \
+            semantic-release:validation \
             --validate --base-branch "${{ github.base_ref }}"
 
       - name: Upload validation diff
