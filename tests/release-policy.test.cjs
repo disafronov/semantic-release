@@ -215,3 +215,75 @@ for (const { branch, message, footer, expected, heading } of [
     }
   });
 }
+
+/*
+ * Integration tests for the actual fallback path with an installed CLI.
+ * A previous regression made --extends load semantic-release's built-in
+ * npm plugin even for Python-only repositories. These verify the plugins
+ * selected by the real executable, not a mocked CLI or the config object.
+ */
+for (const { kind, files, expected, excluded } of [
+  {
+    kind: 'Python/uv',
+    files: {
+      'pyproject.toml': '[project]\nname = "fixture-python"\nversion = "1.2.3"\n',
+      'uv.lock': 'version = 1\nrequires-python = ">=3.14"\n',
+    },
+    expected: ['@semantic-release/exec'],
+    excluded: ['@semantic-release/npm'],
+  },
+  {
+    kind: 'npm',
+    files: {
+      'package.json': JSON.stringify({ name: 'fixture-npm', version: '1.2.3', private: true }),
+      'package-lock.json': JSON.stringify({
+        name: 'fixture-npm', version: '1.2.3', lockfileVersion: 3,
+        requires: true, packages: { '': { name: 'fixture-npm', version: '1.2.3' } },
+      }),
+    },
+    expected: ['@semantic-release/npm'],
+    excluded: ['@semantic-release/exec'],
+  },
+]) {
+  test('real fallback CLI loads the correct plugins for ' + kind, (t) => {
+    const { cwd } = fixture(t);
+    for (const [name, content] of Object.entries(files)) {
+      writeFileSync(path.join(cwd, name), content);
+    }
+    git(cwd, 'add', '.');
+    git(cwd, 'commit', '-m', 'chore: add project manifests');
+
+    // An unconfigured branch makes semantic-release exit after loading and
+    // resolving the actual plugins, without any GitHub API calls or publishing.
+    const result = spawnSync('/bin/sh', [path.join(root, 'semantic-release.sh'), '--dry-run'], {
+      cwd,
+      encoding: 'utf8',
+      env: {
+        ...env,
+        PATH: [path.join(root, 'node_modules', '.bin'), process.env.PATH].join(':'),
+        CI: 'true',
+        GITHUB_ACTIONS: 'true',
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF: 'refs/heads/validation',
+        GITHUB_SHA: git(cwd, 'rev-parse', 'HEAD'),
+      },
+    });
+    const output = result.stdout + result.stderr;
+    assert.equal(result.status, 0, output);
+    assert.match(output, /No local semantic-release configuration found, using default/);
+    for (const plugin of [
+      '@semantic-release/commit-analyzer',
+      '@semantic-release/release-notes-generator',
+      '@semantic-release/changelog',
+      '@semantic-release/git',
+      '@semantic-release/github',
+      ...expected,
+    ]) {
+      assert.ok(output.includes('from "' + plugin + '"'), output);
+    }
+    for (const plugin of excluded) {
+      assert.ok(!output.includes('from "' + plugin + '"'), output);
+    }
+    assert.ok(output.includes('configured to only publish from'), output);
+  });
+}
