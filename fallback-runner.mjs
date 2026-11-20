@@ -1,17 +1,13 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { detectReleaseConfig } from './detect-release-config.mjs';
 
 const require = createRequire(import.meta.url);
-const releaseRequire = createRequire(require.resolve('semantic-release'));
-const { cosmiconfig } = releaseRequire('cosmiconfig');
-const { getDefaultSearchPlaces } = releaseRequire('cosmiconfig/dist/defaults.js');
-const pluginName = (entry) => Array.isArray(entry)
-  ? entry[0] : typeof entry === 'object' ? entry.path ?? 'inline plugin' : entry;
 
 function git(cwd, ...args) {
   return execFileSync('git', args, {
@@ -115,6 +111,9 @@ function ownArguments(argv) {
   if (!['main', 'rc'].includes(baseBranch)) {
     throw new Error('Usage: --validate --base-branch <main|rc> [--diff-output <path>]');
   }
+  if (forwarded.length) {
+    throw new Error('Validation accepts only --base-branch and --diff-output, not upstream CLI options');
+  }
   return { validate, baseBranch, diffOutput, forwarded };
 }
 
@@ -132,17 +131,8 @@ function runUpstreamCli(args, cwd, env) {
 // no config, expose our policy through cosmiconfig rather than --extends:
 // semantic-release 26's built-in plugins otherwise override the fallback.
 async function release(args, cwd) {
-  // Match cosmiconfig search locations but ignore directories named like
-  // configuration files. A malformed package.json is an upstream CLI error.
-  const configFiles = getDefaultSearchPlaces('release').filter(p => p !== 'package.json');
-  const fileConfig = configFiles.some(name => {
-    const path = join(cwd, name);
-    return existsSync(path) && statSync(path).isFile();
-  });
-  const manifest = join(cwd, 'package.json');
-  const packageConfig = !fileConfig && existsSync(manifest)
-    ? JSON.parse(readFileSync(manifest, 'utf8'))?.release != null : false;
-  const fallback = !fileConfig && !packageConfig;
+  const detected = detectReleaseConfig(cwd);
+  const fallback = detected.kind === 'fallback';
   const temporary = join(cwd, '.releaserc');
   if (fallback) {
     console.log('No local semantic-release configuration found, using default');
@@ -155,7 +145,7 @@ async function release(args, cwd) {
   }
 }
 
-async function validation(args, source, baseBranch, diffOutput) {
+async function validation(source, baseBranch, diffOutput) {
   const target = diffOutput ?? process.env.SEMANTIC_RELEASE_DIFF_OUTPUT;
   const diffFile = target ? resolve(source, target) : null;
   if (diffFile) {
@@ -173,86 +163,39 @@ async function validation(args, source, baseBranch, diffOutput) {
   try {
     originalHead = git(source, 'rev-parse', 'HEAD');
     const remote = createLocalRemote(source, baseBranch, temp);
-    git(source, 'clone', '--no-local', '--no-checkout', source, checkout);
+    git(source, 'clone', '--no-local', '--no-checkout', remote, checkout);
     git(checkout, 'checkout', '--detach', originalHead);
 
     // Clone notes as well as refs/tags: release channels are stored in notes.
     const notes = git(source, 'for-each-ref', '--format=%(refname)', 'refs/notes')
       .split('\n').filter(Boolean);
-    for (const ref of notes) git(checkout, 'fetch', source, '+' + ref + ':' + ref);
-
-    const hasConfig = !!(await cosmiconfig('release').search(source));
-    if (!hasConfig) console.log('No local semantic-release configuration found, using default');
-    const configNames = getDefaultSearchPlaces('release')
-      .filter((name) => name !== 'package.json');
-    const removed = [];
-    for (const name of configNames) {
-      const path = join(checkout, name);
-      if (existsSync(path) && name !== '.releaserc.mjs') {
-        unlinkSync(path);
-        removed.push(name);
-      } else if (name === '.releaserc.mjs' && existsSync(path)) {
-        unlinkSync(path);
-        removed.push(name);
-      }
-    }
-    const pkgFile = join(checkout, 'package.json');
-    let modifiedPackage = false;
-    if (existsSync(pkgFile)) {
-      const pkg = JSON.parse(readFileSync(pkgFile, 'utf8'));
-      if (pkg.release != null) {
-        delete pkg.release;
-        writeFileSync(pkgFile, JSON.stringify(pkg));
-        modifiedPackage = true;
-      }
-    }
-
-    // Resolve the actual effective config once, before invoking the original
-    // CLI. A synchronous CJS snapshot is sufficient for cosmiconfig's loader.
-    const core = await import(pathToFileURL(releaseRequire.resolve('@semantic-release/core')).href);
-    const { SEMANTIC_RELEASE_DEFAULT_CONFIG } = await import(
-      'semantic-release/lib/definitions/constants.js');
-    const context = { cwd: source, env: process.env, stdout: process.stdout, stderr: process.stderr };
-    context.logger = core.getLogger(context);
-    const { options } = await core.resolveConfig(context,
-      hasConfig ? {} : require('./fallback-config.cjs'),
-      { baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: false });
-    const plugins = options.plugins.filter(e => pluginName(e) !== '@semantic-release/github');
-    console.log('Active plugins: ' + plugins.map(pluginName).join(', '));
-    const effective = { ...options, plugins, repositoryUrl: remote, dryRun: false, noCi: false };
-
-    // The temporary policy erases itself and restores the original config
-    // before any semantic-release lifecycle plugin runs.
-    const clean = [
-      "const { copyFileSync, unlinkSync } = require('node:fs');",
-      "const { join } = require('node:path');",
-      "unlinkSync(__filename);",
-      "for (const name of " + JSON.stringify(removed) + ")",
-      "  copyFileSync(join(" + JSON.stringify(source) + ", name), join(process.cwd(), name));",
-      ...(modifiedPackage
-        ? ["copyFileSync(join(" + JSON.stringify(source) + ", 'package.json'), join(process.cwd(), 'package.json'));"]
-        : []),
-    ].join('\n');
-    // The CLI's config loader is synchronous; it cannot load async ESM.
-    const serialized = JSON.stringify(effective);
-    if (serialized === undefined) throw new Error('Release configuration cannot be serialized for CLI validation');
-    writeFileSync(join(checkout, '.releaserc.cjs'), clean + '\nmodule.exports = ' + serialized + ';\n');
+    for (const ref of notes) git(checkout, 'fetch', remote, '+' + ref + ':' + ref);
 
     const env = {
       ...process.env, CI: 'true', GITHUB_ACTIONS: 'true',
       GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/' + baseBranch,
       GIT_ALLOW_PROTOCOL: 'file', GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: 'echo',
     };
-    for (const key of ['GITHUB_TOKEN', 'GH_TOKEN', 'GIT_CREDENTIALS',
-      'GL_TOKEN', 'GITLAB_TOKEN', 'BITBUCKET_TOKEN', 'BB_TOKEN_BASIC_AUTH',
-      'GITHUB_EVENT_PATH', 'GITHUB_HEAD_REF', 'GITHUB_BASE_REF']) delete env[key];
+    // A validation run never needs credentials, even if the parent process has them.
+    for (const key of Object.keys(env)) {
+      if (/TOKEN|PASSWORD|SECRET|CREDENTIAL|API_KEY|(^|_)AUTH($|_)/i.test(key)) delete env[key];
+    }
+    for (const key of ['GITHUB_EVENT_PATH', 'GITHUB_HEAD_REF', 'GITHUB_BASE_REF']) delete env[key];
 
     const beforeTags = new Set(git(checkout, 'tag', '--list').split('\n').filter(Boolean));
-    runUpstreamCli(args, checkout, env);
+    const result = spawnSync(process.execPath,
+      [fileURLToPath(new URL('./validation-worker.mjs', import.meta.url)), remote],
+      { cwd: checkout, env, stdio: 'inherit' });
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      const error = new Error('Validation worker exited with status ' + result.status);
+      error.exitCode = result.status ?? 1;
+      throw error;
+    }
     const createdTags = git(checkout, 'tag', '--list').split('\n').filter(
       (tag) => tag && !beforeTags.has(tag));
     console.log('Created tags: ' + (createdTags.join(', ') || 'none'));
-    console.log('Validation passed (upstream CLI, local Git remote, no GitHub plugin).');
+    console.log('Validation passed (upstream core, local Git remote, external publishing disabled).');
   } catch (error) {
     failed = error;
   } finally {
@@ -279,7 +222,7 @@ async function validation(args, source, baseBranch, diffOutput) {
 
 try {
   const { validate, baseBranch, diffOutput, forwarded } = ownArguments(process.argv.slice(2));
-  if (validate) await validation(forwarded, process.cwd(), baseBranch, diffOutput);
+  if (validate) await validation(process.cwd(), baseBranch, diffOutput);
   else await release(forwarded, process.cwd());
 } catch (error) {
   console.error(error);

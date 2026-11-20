@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { execFileSync, spawnSync } = require('node:child_process');
-const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -63,6 +63,7 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
   git(cwd, 'fetch', 'origin', '+refs/heads/*:refs/remotes/origin/*');
   git(cwd, 'switch', '-c', 'topic', 'origin/' + baseBranch);
   for (const [name, content] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(cwd, name)), { recursive: true });
     writeFileSync(path.join(cwd, name), content);
   }
   writeFileSync(path.join(cwd, 'README.md'), 'updated\n');
@@ -77,6 +78,7 @@ function fixture(t, files = {}, message = 'fix: validate release policy', baseBr
   const originalTags = git(cwd, 'ls-remote', '--tags', 'origin');
   const baseline = git(cwd, 'rev-parse', 'HEAD');
   return {
+    cwd,
     run(base = 'main') {
       const result = spawnSync(process.execPath, [
         path.join(root, 'fallback-runner.mjs'), '--validate', '--base-branch', base,
@@ -109,8 +111,8 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /No local semantic-release configuration found, using default/);
   assert.match(result.output, /Active plugins:.*@semantic-release\/exec/);
-  assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/github/);
-  assert.doesNotMatch(result.output, /Loaded plugin .*@semantic-release\/github/);
+  assert.match(result.output, /Active plugins:.*@semantic-release\/github/);
+  assert.doesNotMatch(result.output, /Start step "publish"|Start step "addChannel"|Start step "success"/);
   assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/npm/);
   assert.match(result.output, /Created tags: v1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/exec"/);
@@ -135,7 +137,7 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /Active plugins:.*@semantic-release\/npm/);
   assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/exec/);
-  assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
+  assert.doesNotMatch(result.output, /Start step "verifyConditions"/);
   assert.match(result.output, /Created tags: v1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/npm"/);
   assert.match(result.diff, /package\.json/);
@@ -202,4 +204,125 @@ test('PR validation checks non-releasing changes and rejects absent target branc
   const wrongBranch = f.run('rc');
   assert.notEqual(wrongBranch.status, 0, wrongBranch.output);
   assert.doesNotMatch(wrongBranch.output, /Validation passed/);
+});
+
+test('validation preserves inline plugin functions and skips publishing and credential checks', (t) => {
+  const policy = [
+    "const fs = require('node:fs');",
+    'module.exports = {',
+    "  branches: ['main'],",
+    '  plugins: [{',
+    "    verifyConditions: () => { throw new Error('verifyConditions must be skipped'); },",
+    "    analyzeCommits: () => 'patch',",
+    "    prepare: () => fs.writeFileSync('inline-prepared.txt', 'inline plugin worked\\n'),",
+    "    publish: () => { throw new Error('publish must be skipped'); },",
+    "    addChannel: () => { throw new Error('addChannel must be skipped'); },",
+    "    success: () => { throw new Error('success must be skipped'); },",
+    "    fail: () => { throw new Error('fail must be skipped'); },",
+    '  }],',
+    '};',
+    '',
+  ].join('\n');
+  const f = fixture(t, { '.releaserc.cjs': policy });
+  const result = f.run();
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Created tags: v1\.2\.4/);
+  assert.match(result.diff, /inline-prepared\.txt/);
+  assert.match(result.diff, /inline plugin worked/);
+  assert.doesNotMatch(result.output, /must be skipped/);
+});
+
+test('validation resolves a plugin relative to its shareable configuration', (t) => {
+  const f = fixture(t, {
+    '.releaserc.cjs': [
+      "module.exports = { extends: './shared/config.cjs', plugins: ['shared-only-plugin'] };",
+      '',
+    ].join('\n'),
+    'shared/config.cjs': [
+      'module.exports = {',
+      "  branches: ['main'],",
+      "  plugins: ['shared-only-plugin'],",
+      '};',
+      '',
+    ].join('\n'),
+    'shared/node_modules/shared-only-plugin/index.js': [
+      'module.exports = {',
+      "  analyzeCommits: () => 'patch',",
+      "  prepare: () => require('node:fs').writeFileSync('extended.txt', 'from extends\\n'),",
+      '};',
+      '',
+    ].join('\n'),
+  });
+  const result = f.run();
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.diff, /extended\.txt/);
+  assert.match(result.diff, /from extends/);
+  assert.match(result.tags, /v1\.2\.4/);
+});
+
+test('validation rejects CLI overrides that could bypass the local-only policy', (t) => {
+  const f = fixture(t);
+  const result = spawnSync(process.execPath, [
+    path.join(root, 'fallback-runner.mjs'),
+    '--validate', '--base-branch', 'main', '--repository-url', 'https://example.invalid/repo',
+  ], { cwd: f.cwd, env, encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Validation accepts only/);
+});
+
+test('project JavaScript configuration executes only inside the isolated checkout', (t) => {
+  const f = fixture(t, {
+    '.releaserc.cjs': [
+      "require('node:fs').writeFileSync('config-side-effect.txt', 'executed in clone\\n');",
+      "module.exports = { branches: ['main'], plugins: ['@semantic-release/commit-analyzer'] };",
+    ].join('\n') + '\n',
+  });
+  const result = f.run();
+  assert.equal(result.status, 0, result.output);
+  assert.equal(existsSync(path.join(f.cwd, 'config-side-effect.txt')), false);
+  assert.match(result.diff, /config-side-effect\.txt/);
+});
+
+test('validation invokes verifyRelease and propagates its error', (t) => {
+  const f = fixture(t, {
+    '.releaserc.cjs': [
+      'module.exports = {',
+      "  branches: ['main'],",
+      '  plugins: [{',
+      "    analyzeCommits: () => 'patch',",
+      "    verifyRelease: () => { throw new Error('verifyRelease probe'); },",
+      "    prepare: () => require('node:fs').writeFileSync('should-not-exist.txt', 'bad'),",
+      '  }],',
+      '};',
+      '',
+    ].join('\n'),
+  });
+  const result = f.run();
+  assert.notEqual(result.status, 0, result.output);
+  assert.match(result.output, /verifyRelease probe/);
+  assert.doesNotMatch(result.diff, /should-not-exist\.txt/);
+});
+
+test('validation captures partial prepare changes even when prepare fails', (t) => {
+  const f = fixture(t, {
+    '.releaserc.cjs': [
+      'module.exports = {',
+      "  branches: ['main'],",
+      '  plugins: [{',
+      "    analyzeCommits: () => 'patch',",
+      '    prepare: () => {',
+      "      require('node:fs').writeFileSync('partial-prepared.txt', 'partial changes\\n');",
+      "      throw new Error('intentional prepare failure');",
+      '    },',
+      '  }],',
+      '};',
+      '',
+    ].join('\n'),
+  });
+  const result = f.run();
+  assert.notEqual(result.status, 0, result.output);
+  assert.match(result.output, /intentional prepare failure/);
+  assert.match(result.diff, /partial-prepared\.txt/);
+  assert.match(result.diff, /partial changes/);
+  assert.equal(result.head, result.baseline);
 });

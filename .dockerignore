@@ -2,5 +2,7 @@
 
 !/fallback-runner.mjs
 !/fallback-config.cjs
+!/detect-release-config.mjs
+!/validation-worker.mjs
 !/package.json
 !/package-lock.json

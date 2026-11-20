@@ -21,8 +21,8 @@ Docker image. The image itself does **not** publish packages to npm or PyPI.
 - **Release policy:** analyzes conventional commits, updates supported project
   version files, writes `CHANGELOG.md` and a signed-off release commit, creates
   a version tag, and publishes a GitHub Release.
-- **Semantic workflow:** validates the release configuration, plugin conditions
-  and PR commits on pull requests to `main` or `rc`, and runs a release
+- **Semantic workflow:** validates release configuration, version calculation,
+  and local preparation on pull requests to `main` or `rc`, and runs a release
   on pushes to those branches.
 - **Docker workflow (this repository):** builds and publishes a multi-platform
   image to GHCR on pull requests and version tags, then signs its digest with
@@ -114,16 +114,23 @@ to compare PR commits against `origin/main` or `origin/rc`.
 The `rc` branch is optional: the default policy uses it for prereleases only
 when it exists.
 
-The `--validate --base-branch main|rc` mode requires image v5.1.0 or newer.
-It loads the same effective policy and runs through the same release runner,
-with `@semantic-release/github` removed and Git operations redirected to a
-local temporary `file://` remote. The validation container has no network and
-no release credentials. It runs real `prepare` steps (including uv, npm and
-changelog), creates local release commits and tags, then prints the resulting
+The `--validate --base-branch main|rc` mode uses the upstream
+`@semantic-release/core` engine in a temporary Git checkout with a local
+`file://` remote. It selects the same project configuration or bundled
+fallback policy as normal release, preserving inline plugins and shareable
+`extends` configurations. It performs real commit analysis, release notes,
+`prepare`, local release commits, tags, and notes, and captures the resulting
 Git diff, including committed changes. Set `SEMANTIC_RELEASE_DIFF_OUTPUT` to
-save this diff for a workflow artifact. Other plugin network attempts fail in
-the isolated container. Only the push-triggered release job performs actual
-remote publishing and verifies GitHub publishing permissions.
+save the diff as a workflow artifact.
+
+Validation deliberately skips `verifyConditions`, `publish`, `addChannel`,
+`success`, and `fail`: external publishing and credential checks are not
+part of the validation contract, and intentionally not publishing is not a
+failure. The container runs with `--network none` and without release tokens.
+A custom plugin's `prepare` can still execute arbitrary local code, so the
+workspace mount's write permissions are a separate isolation concern.
+Only the push-triggered release job performs actual remote publishing and
+verifies GitHub publishing permissions.
 
 ## Environment variables
 
@@ -157,8 +164,9 @@ temporary `.releaserc` in the project workspace. It removes that file
 after the CLI exits, including on failure. This explicit configuration
 takes precedence over semantic-release 26's built-in npm plugin list.
 A project with a local release configuration uses the upstream CLI unchanged.
-The runner handles only `--validate`, `--base-branch`, and `--diff-output`
-for validation; other arguments are forwarded verbatim to semantic-release,
+The runner handles `--validate`, `--base-branch`, and `--diff-output`
+for validation, and rejects unrelated CLI overrides in that mode. In normal
+release mode, all arguments are forwarded verbatim to semantic-release,
 including arguments after `--`. The container starts Node directly; there is
 no shell entrypoint.
 
@@ -227,12 +235,12 @@ is not required. Projects without a local release configuration use this
 default through the entrypoint's `fallback-runner.mjs`.
 
 This image repository uses the same default policy instead of maintaining
-a separate root `.releaserc.cjs`. Its test workflow copies the default
-configuration to a local file for tests. The semantic workflow runs automatically on pushes to `main` and `rc`:
+a separate root `.releaserc.cjs`. Its tests run against temporary fixture
+repositories. The semantic workflow runs automatically on pushes to `main` and `rc`:
 `main` publishes stable releases and `rc` publishes prereleases.
 
 Other projects can override the default through their own local
 configuration. The bundled policy retains the shared release rules,
 plugins and dynamic Git committer sign-off.
 
-<!-- refactor: deps 2 -->
+<!-- refactor: deps 3 -->
