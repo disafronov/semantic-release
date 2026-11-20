@@ -11,7 +11,7 @@ import { hideBin } from 'yargs/helpers';
 const require = createRequire(import.meta.url);
 // The same runtime composition is invoked by normal release and validation.
 export function bundledReleaseOptions(options = {}) {
-  return { ...require('./default.releaserc.cjs'), ...options };
+  return { ...require('./fallback-config.cjs'), ...options };
 }
 export function runBundledRelease(options = {}, runtime = {}) {
   return semanticRelease(bundledReleaseOptions(options), runtime);

@@ -145,20 +145,20 @@ an npm `scripts.release` entry does not.
 
 When no local configuration is found, the wrapper prints
 `No local semantic-release configuration found, using default` and invokes
-`fallback-runner.mjs`. This runner loads `default.releaserc.cjs` and supplies
+`fallback-runner.mjs`. This runner loads `fallback-config.cjs` and supplies
 its policy as runtime options to semantic-release 26, so the bundled plugin
 list takes precedence over semantic-release's built-in npm pipeline.
 It does not write a configuration file into the project.
 When local configuration exists, the wrapper invokes the normal
 `semantic-release` CLI instead.
 
-The bundled policy is defined in [`default.releaserc.cjs`](default.releaserc.cjs).
+The bundled policy is defined in [`fallback-config.cjs`](fallback-config.cjs).
 A local configuration replaces the automatic fallback. To change branches
 without losing the bundled plugins, load the policy explicitly:
 
 ```js
 module.exports = {
-  ...require('/opt/semantic-release/default.releaserc.cjs'),
+  ...require('/opt/semantic-release/fallback-config.cjs'),
   branches: ['main'],
 };
 ```
@@ -211,7 +211,7 @@ A local semantic-release configuration overrides this default behavior.
 
 ## Release policies
 
-The bundled `default.releaserc.cjs` produces stable releases from `main` and
+The bundled `fallback-config.cjs` produces stable releases from `main` and
 supports an optional `rc` branch for `rc` prereleases. A `release` branch
 is not required. Projects without a local release configuration use this
 default through the entrypoint's `fallback-runner.mjs`.
