@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -116,17 +116,26 @@ function runUpstreamCli(args, cwd, env) {
 // no config, expose our policy through cosmiconfig rather than --extends:
 // semantic-release 26's built-in plugins otherwise override the fallback.
 async function release(args, cwd) {
-  const config = await cosmiconfig('release').search(cwd);
-  const temporary = join(cwd, '.releaserc.cjs');
-  if (!config) {
+  // Match cosmiconfig search locations but ignore directories named like
+  // configuration files. A malformed package.json is an upstream CLI error.
+  const configFiles = getDefaultSearchPlaces('release').filter(p => p !== 'package.json');
+  const fileConfig = configFiles.some(name => {
+    const path = join(cwd, name);
+    return existsSync(path) && statSync(path).isFile();
+  });
+  const manifest = join(cwd, 'package.json');
+  const packageConfig = !fileConfig && existsSync(manifest)
+    ? JSON.parse(readFileSync(manifest, 'utf8'))?.release != null : false;
+  const fallback = !fileConfig && !packageConfig;
+  const temporary = join(cwd, '.releaserc');
+  if (fallback) {
     console.log('No local semantic-release configuration found, using default');
-    writeFileSync(temporary,
-      'module.exports = require(' + JSON.stringify(join(dirname(fileURLToPath(import.meta.url)), 'fallback-config.cjs')) + ');\n');
+    writeFileSync(temporary, JSON.stringify(require('./fallback-config.cjs')));
   }
   try {
     runUpstreamCli(args, cwd, process.env);
   } finally {
-    if (!config) rmSync(temporary, { force: true });
+    if (fallback) rmSync(temporary, { force: true });
   }
 }
 
