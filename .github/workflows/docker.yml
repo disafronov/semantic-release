@@ -137,7 +137,16 @@ jobs:
             --network none \
             --read-only \
             --tmpfs /tmp:rw,nosuid,size=64m,mode=1777 \
-            -v "$PWD:/workspace:ro" \
+            -v "$PWD:/workspace" \
+            -e SEMANTIC_RELEASE_DIFF_OUTPUT=/workspace/validation-artifacts/release.diff \
             -w /workspace \
             "${IMAGE}:pr-${PR_NUMBER}" \
             --validate --base-branch "${BASE_BRANCH}"
+
+      - name: Upload validation diff
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-validation-diff-${{ github.event.pull_request.number }}
+          path: validation-artifacts/release.diff
+          if-no-files-found: ignore
