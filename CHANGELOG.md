@@ -1,3 +1,9 @@
+## [5.0.0-rc.2](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.1...v5.0.0-rc.2) (2026-11-20)
+
+### Bug Fixes
+
+* include SSH client for Git remote operations ([6df914b](https://github.com/disafronov/semantic-release/commit/6df914b69631b2a7d338de3fd1705f5980e16596))
+
 ## [5.0.0-rc.1](https://github.com/disafronov/semantic-release/compare/v4.0.3-rc.1...v5.0.0-rc.1) (2026-11-20)
 
 ### ⚠ BREAKING CHANGES
