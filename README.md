@@ -21,8 +21,9 @@ Docker image. The image itself does **not** publish packages to npm or PyPI.
 - **Release policy:** analyzes conventional commits, updates supported project
   version files, writes `CHANGELOG.md` and a signed-off release commit, creates
   a version tag, and publishes a GitHub Release.
-- **Semantic workflow:** runs a dry-run on pull requests to `main` or `rc`,
-  and runs a release on pushes to those branches.
+- **Semantic workflow:** validates the release configuration, plugin conditions
+  and PR commits on pull requests to `main` or `rc`, and runs a release
+  on pushes to those branches.
 - **Docker workflow (this repository):** builds and publishes a multi-platform
   image to GHCR on pull requests and version tags, then signs its digest with
   Cosign. This is separate from package publication in consumer repositories.
@@ -54,14 +55,17 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Semantic release dry run
+      - name: Validate release policy and PR commits
         run: |
           docker run --rm \
             --user 1001 \
-            -v "${{ github.workspace }}:/workspace" \
+            --network none \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,size=64m,mode=1777 \
+            -v "${{ github.workspace }}:/workspace:ro" \
             -w /workspace \
             ghcr.io/disafronov/semantic-release:${{ vars.SEMANTIC_RELEASE_TAG || 'latest' }} \
-            --dry-run
+            --validate --base-branch "${{ github.base_ref }}"
 
   release:
     if: github.event_name == 'push'
@@ -95,15 +99,24 @@ jobs:
 
 The release job needs a repository secret named `SEMANTIC_RELEASE_TOKEN` with
 permissions to push release commits and tags and create GitHub releases.
-The workflow explicitly passes it as `GITHUB_TOKEN` to semantic-release;
+The release job explicitly passes it as `GITHUB_TOKEN` to semantic-release;
 the container does not obtain credentials from GitHub Actions automatically.
+The PR validation job deliberately receives no release token.
 The token must also satisfy any applicable branch protection or ruleset
 requirements. The example uses `latest` by default; set the
 `SEMANTIC_RELEASE_TAG` repository variable to pin a specific image version.
 
-A full Git history (`fetch-depth: 0`) is required to discover prior tags.
+A full Git history (`fetch-depth: 0`) is required to discover prior tags and
+to compare PR commits against `origin/main` or `origin/rc`.
 The `rc` branch is optional: the default policy uses it for prereleases only
 when it exists.
+
+The `--validate --base-branch main|rc` mode requires image v5.1.0 or newer.
+It resolves and loads the effective release policy, verifies local plugin
+conditions except GitHub authentication, analyzes real PR commits, and
+smoke-tests release notes for releasable changes. It does **not** run
+`prepare`, `publish`, or remote authentication. Only the push-triggered
+release job verifies the full publishing permissions and release procedure.
 
 ## Environment variables
 
@@ -131,27 +144,28 @@ Only the top-level `release` property in `package.json` counts as configuration;
 an npm `scripts.release` entry does not.
 
 When no local configuration is found, the wrapper prints
-`No local semantic-release configuration found, using default` and runs
-`semantic-release --extends /opt/semantic-release/default.releaserc.cjs`, followed
-by the original arguments. It does not write a configuration file into the
-project. When local configuration exists, the original arguments are passed
-without adding `--extends`.
+`No local semantic-release configuration found, using default` and invokes
+`fallback-runner.mjs`. This runner loads `default.releaserc.cjs` and supplies
+its policy as runtime options to semantic-release 26, so the bundled plugin
+list takes precedence over semantic-release's built-in npm pipeline.
+It does not write a configuration file into the project.
+When local configuration exists, the wrapper invokes the normal
+`semantic-release` CLI instead.
 
 The bundled policy is defined in [`default.releaserc.cjs`](default.releaserc.cjs).
-A local configuration replaces the automatic fallback unless it explicitly
-extends the bundled configuration. For example, a project can override the
-release branches:
+A local configuration replaces the automatic fallback. To change branches
+without losing the bundled plugins, load the policy explicitly:
 
-```json
-{
-  "branches": ["main"]
-}
+```js
+module.exports = {
+  ...require('/opt/semantic-release/default.releaserc.cjs'),
+  branches: ['main'],
+};
 ```
 
-This minimal local configuration does **not** inherit the bundled plugin
-pipeline. To keep the bundled policy, omit local configuration or explicitly
-extend `/opt/semantic-release/default.releaserc.cjs` from a compatible
-configuration file.
+With semantic-release 26, simply using `extends` for the bundled policy may
+leave its `plugins` overridden by the built-in defaults. The example above
+avoids that precedence problem.
 
 ### Default commit types
 
@@ -200,7 +214,7 @@ A local semantic-release configuration overrides this default behavior.
 The bundled `default.releaserc.cjs` produces stable releases from `main` and
 supports an optional `rc` branch for `rc` prereleases. A `release` branch
 is not required. Projects without a local release configuration use this
-default through the entrypoint's conditional `--extends`.
+default through the entrypoint's `fallback-runner.mjs`.
 
 This image repository uses the same default policy instead of maintaining
 a separate root `.releaserc.cjs`. Its test workflow copies the default
