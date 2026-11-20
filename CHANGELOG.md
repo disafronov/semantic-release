@@ -1,3 +1,13 @@
+## [5.0.0-rc.1](https://github.com/disafronov/semantic-release/compare/v4.0.3-rc.1...v5.0.0-rc.1) (2026-11-20)
+
+### ⚠ BREAKING CHANGES
+
+* The image upgrades semantic-release from 25 to 26, whose minimum supported Node.js version is 26.13. Existing consumers using the bundled runtime must use a compatible image.
+
+### Code Refactoring
+
+* require Node.js 26.13 for semantic-release 26 ([5b57a92](https://github.com/disafronov/semantic-release/commit/5b57a924f12818c6f0accb2de30568547536da39))
+
 ## [4.0.3-rc.1](https://github.com/disafronov/semantic-release/compare/v4.0.2...v4.0.3-rc.1) (2026-11-20)
 
 ### Code Refactoring
