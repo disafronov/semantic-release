@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const wrapper = path.join(root, 'semantic-release.sh');
+const wrapper = path.join(root, 'fallback-runner.mjs');
 const message = 'No local semantic-release configuration found, using default';
 // Resolve the loader from semantic-release, including if npm stops hoisting it.
 const releaseRequire = createRequire(require.resolve('semantic-release'));
@@ -48,10 +48,10 @@ process.exit(Number(process.env.RELEASE_STATUS || 0));
   return {
     cwd,
     run(args = [], overrides = {}) {
-      const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, CAPTURE: capture };
-      delete env.NODE_PATH;
+      const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, CAPTURE: capture,
+        NODE_PATH: '/opt/semantic-release/node_modules' };
       Object.assign(env, overrides);
-      const result = spawnSync('/bin/sh', [wrapper, ...args], { cwd, env, encoding: 'utf8' });
+      const result = spawnSync(process.execPath, [wrapper, ...args], { cwd, env, encoding: 'utf8' });
       return { ...result, invocation: result.status === Number(env.RELEASE_STATUS || 0)
         ? JSON.parse(readFileSync(capture, 'utf8')) : undefined };
     },
@@ -65,7 +65,7 @@ function assertInvocation(result, args, fallback) {
   assert.equal(result.invocation.fallback, fallback);
   assert.equal(result.stdout, fallback ? `${message}\n` : '');
   assert.equal(result.stderr, '');
-  assert.equal(result.invocation.nodePath, '/opt/semantic-release/node_modules:');
+  assert.equal(result.invocation.nodePath, '/opt/semantic-release/node_modules');
 }
 
 // The expected list comes from the installed upstream loader: dependency updates
@@ -142,19 +142,20 @@ test('malformed package.json reports a parsing error instead of guessing its con
   assert.equal(result.invocation, undefined);
 });
 
-test('preserves NODE_PATH and propagates semantic-release exit status', (t) => {
+test('forwards NODE_PATH and propagates semantic-release exit status', (t) => {
   const f = fixture(t);
   const result = f.run([], { NODE_PATH: '/custom modules:/another', RELEASE_STATUS: '23' });
   assert.equal(result.status, 23);
-  assert.equal(result.invocation.nodePath, '/opt/semantic-release/node_modules:/custom modules:/another');
+  assert.equal(result.invocation.nodePath, '/custom modules:/another');
 });
 
-test('git log failure still stops the wrapper', (t) => {
+test('failure resolving the fallback Git identity stops the runner', (t) => {
   const f = fixture(t);
   const result = f.run([], { GIT_STATUS: '17' });
-  assert.equal(result.status, 17);
+  assert.notEqual(result.status, 0);
   assert.equal(result.invocation, undefined);
-  assert.equal(result.stdout, '');
+  assert.equal(result.stdout, message + '\n');
+  assert.match(result.stderr, /git var|Command failed/);
 });
 
 test('fallback only consumes its own CLI flags and forwards upstream args unchanged', (t) => {
