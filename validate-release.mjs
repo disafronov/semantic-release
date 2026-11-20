@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import util from 'node:util';
 import hideSensitive from 'semantic-release/lib/hide-sensitive.js';
-import { runRelease } from './fallback-runner.mjs';
+import { SEMANTIC_RELEASE_DEFAULT_CONFIG } from 'semantic-release/lib/definitions/constants.js';
+import semanticRelease from 'semantic-release';
+import { bundledReleaseOptions, runBundledRelease } from './fallback-runner.mjs';
+
+const require = createRequire(import.meta.url);
+const releaseRequire = createRequire(require.resolve('semantic-release'));
+const core = await import(pathToFileURL(releaseRequire.resolve('@semantic-release/core')).href);
 
 const pluginName = (entry) => Array.isArray(entry)
   ? entry[0]
@@ -117,25 +124,23 @@ async function validate() {
       'GITLAB_TOKEN', 'BITBUCKET_TOKEN', 'BB_TOKEN_BASIC_AUTH', 'GITHUB_EVENT_PATH',
       'GITHUB_HEAD_REF', 'GITHUB_BASE_REF']) delete env[key];
 
-    let configuredPlugins = [];
-    const result = await runRelease({}, { cwd: source, env }, {
-      fallback: bundled,
-      transform: (options) => {
-        const plugins = options.plugins.filter(
-          (entry) => pluginName(entry) !== '@semantic-release/github');
-        configuredPlugins = plugins.map(pluginName);
-        return {
-          ...options,
-          plugins,
-          repositoryUrl: remote,
-          dryRun: false,
-          noCi: false,
-        };
-      },
-    });
+    // Resolve the same policy the normal release uses. Validation alone owns
+    // disabling network publishers and replacing the Git remote.
+    const context = { cwd: source, env, stdout: process.stdout, stderr: process.stderr };
+    context.logger = core.getLogger(context);
+    const { options } = await core.resolveConfig(
+      context, bundled ? bundledReleaseOptions() : {},
+      { baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: false },
+    );
+    const plugins = options.plugins.filter(
+      (entry) => pluginName(entry) !== '@semantic-release/github');
+    const runOptions = { ...options, plugins, repositoryUrl: remote, dryRun: false, noCi: false };
+    const result = bundled
+      ? await runBundledRelease(runOptions, { cwd: source, env })
+      : await semanticRelease(runOptions, { cwd: source, env });
 
     console.log('Validated release policy for ' + baseBranch + ' against actual release history');
-    console.log('Active plugins: ' + configuredPlugins.join(', '));
+    console.log('Active plugins: ' + plugins.map(pluginName).join(', '));
     console.log('Commits since last release: ' + (result?.commits?.length ?? 0));
     console.log('Next release: ' + (result?.nextRelease?.version ?? 'none'));
     console.log('Validation passed (real local prepare, local Git pushes, no external access).');
