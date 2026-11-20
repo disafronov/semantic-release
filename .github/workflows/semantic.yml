@@ -34,6 +34,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # actions/checkout fetch-depth: 0 includes tags but not semantic-release channel notes.
+      - name: Fetch semantic-release notes
+        run: git fetch origin '+refs/notes/*:refs/notes/*'
+
       - name: Validate release policy and PR commits
         run: |
           docker run --rm \
