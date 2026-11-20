@@ -130,7 +130,8 @@ async function validate() {
   const baseBranch = flags[1];
   const source = process.cwd();
   const originalHead = git(source, 'rev-parse', 'HEAD');
-  const diffFile = flags[2] ? resolve(source, flags[3]) : null;
+  const diffTarget = flags[2] ? flags[3] : process.env.SEMANTIC_RELEASE_DIFF_OUTPUT;
+  const diffFile = diffTarget ? resolve(source, diffTarget) : null;
   if (diffFile) {
     const rel = relative(source, diffFile);
     if (!rel || rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel) ||
