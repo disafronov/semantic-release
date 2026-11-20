@@ -35,10 +35,10 @@ function fixture(t, files = {}) {
   // Stub only upstream CLI. The wrapper and its config selection run for real.
   writeFileSync(path.join(bin, 'semantic-release'), `#!${process.execPath}
 const fs = require('node:fs');
-const candidate = '.releaserc.cjs';
+const candidate = '.releaserc';
 const generatedFallback = fs.existsSync(candidate) &&
   fs.statSync(candidate).isFile() &&
-  fs.readFileSync(candidate, 'utf8').includes('fallback-config.cjs');
+  JSON.parse(fs.readFileSync(candidate, 'utf8')).plugins?.length > 0;
 fs.writeFileSync(process.env.CAPTURE, JSON.stringify({
   runner: 'semantic-release', fallback: generatedFallback,
   args: process.argv.slice(2), nodePath: process.env.NODE_PATH,
@@ -134,9 +134,12 @@ test('a directory named like a config is not a config file', (t) => {
   assertInvocation(f.run(), [], true);
 });
 
-test('malformed package.json cannot cause a false positive from text matching', (t) => {
+test('malformed package.json reports a parsing error instead of guessing its config', (t) => {
   const f = fixture(t, { 'package.json': '{"release":' });
-  assertInvocation(f.run(), [], true);
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /SyntaxError/);
+  assert.equal(result.invocation, undefined);
 });
 
 test('preserves NODE_PATH and propagates semantic-release exit status', (t) => {
