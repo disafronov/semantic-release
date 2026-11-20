@@ -1,3 +1,9 @@
+## [5.2.1-rc.1](https://github.com/disafronov/semantic-release/compare/v5.2.0...v5.2.1-rc.1) (2026-11-20)
+
+### Code Refactoring
+
+* separate release config detection and isolated core validation ([12ecfb3](https://github.com/disafronov/semantic-release/commit/12ecfb31b97051b7aead05828a53bcdbc4a204bb))
+
 ## [5.2.0](https://github.com/disafronov/semantic-release/compare/v5.1.1...v5.2.0) (2026-11-20)
 
 ### Features
