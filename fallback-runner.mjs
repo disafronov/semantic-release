@@ -157,6 +157,7 @@ async function validation(args, source, baseBranch, diffOutput) {
     for (const ref of notes) git(checkout, 'fetch', source, '+' + ref + ':' + ref);
 
     const hasConfig = !!(await cosmiconfig('release').search(source));
+    if (!hasConfig) console.log('No local semantic-release configuration found, using default');
     const configNames = getDefaultSearchPlaces('release')
       .filter((name) => name !== 'package.json');
     const removed = [];
