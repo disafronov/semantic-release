@@ -41,10 +41,20 @@ jobs:
             --network none \
             --read-only \
             --tmpfs /tmp:rw,nosuid,size=64m,mode=1777 \
-            -v "${{ github.workspace }}:/workspace:ro" \
+            -v "${{ github.workspace }}:/workspace" \
+            -e SEMANTIC_RELEASE_DIFF_OUTPUT=/workspace/validation-artifacts/release.diff \
             -w /workspace \
             ${{ vars.SEMANTIC_RELEASE_IMAGE || 'ghcr.io/disafronov/semantic-release' }}:${{ vars.SEMANTIC_RELEASE_TAG || 'latest' }} \
             --validate --base-branch "${{ github.base_ref }}"
+
+      - name: Upload validation diff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-validation-diff-${{ github.event.pull_request.number }}
+          path: validation-artifacts/release.diff
+          if-no-files-found: ignore
+
 
   release:
     name: "Release"
