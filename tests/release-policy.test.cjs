@@ -59,13 +59,13 @@ async function library(name) {
 }
 
 test('bundled default supports stable main and optional rc', () => {
-  const bundled = load('default.releaserc.cjs');
+  const bundled = load('fallback-config.cjs');
   assert.deepEqual(bundled.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
   assert.equal(bundled.extends, undefined);
 });
 
 test('bundled configuration derives sign-off from the actual Git committer', () => {
-  for (const name of ['default.releaserc.cjs']) {
+  for (const name of ['fallback-config.cjs']) {
     for (const [who, email] of [['First Committer', 'first@example.invalid'], ['Other Committer', 'other@example.invalid']]) {
       const config = load(name, { GIT_COMMITTER_NAME: who, GIT_COMMITTER_EMAIL: email });
       const message = config.plugins.find(([plugin]) => plugin === '@semantic-release/git')[1].message;
@@ -79,7 +79,7 @@ test('actual semantic-release loader resolves the bundled default and every plug
   const resolveConfig = await library('resolve-config.js');
   const { options, plugins } = await resolveConfig(
     context,
-    { extends: [path.join(root, 'default.releaserc.cjs')] },
+    { extends: [path.join(root, 'fallback-config.cjs')] },
     { buildPlugins: true }
   );
   assert.deepEqual(options.branches, ['main', { name: 'rc', prerelease: 'rc' }]);
@@ -92,7 +92,7 @@ test('a consumer with only main remains a stable release branch', async (t) => {
   const getBranches = await library('branches/index.js');
   const getLastRelease = await library('get-last-release.js');
   const getNextVersion = await library('get-next-version.js');
-  const options = { branches: load('default.releaserc.cjs').branches, tagFormat: 'v${version}' };
+  const options = { branches: load('fallback-config.cjs').branches, tagFormat: 'v${version}' };
   const branches = await getBranches(pathToFileURL(remote).href, 'main', { ...context, options });
   assert.deepEqual(branches.map(({ name, type }) => ({ name, type })), [{ name: 'main', type: 'release' }]);
   const branch = branches[0];
@@ -108,7 +108,7 @@ test('optional rc branch produces prereleases while main stays stable', async (t
   const getBranches = await library('branches/index.js');
   const getLastRelease = await library('get-last-release.js');
   const getNextVersion = await library('get-next-version.js');
-  const options = { branches: load('default.releaserc.cjs').branches, tagFormat: 'v${version}' };
+  const options = { branches: load('fallback-config.cjs').branches, tagFormat: 'v${version}' };
   const branches = await getBranches(pathToFileURL(remote).href, 'main', { ...context, options });
   assert.deepEqual(branches.map(({ name, type }) => ({ name, type })), [
     { name: 'main', type: 'release' },
@@ -122,7 +122,7 @@ test('optional rc branch produces prereleases while main stays stable', async (t
 });
 
 test('refactor remains a patch release and appears in generated notes', () => {
-  const config = load('default.releaserc.cjs');
+  const config = load('fallback-config.cjs');
   const analyzer = config.plugins.find(([name]) => name === '@semantic-release/commit-analyzer')[1];
   const notes = config.plugins.find(([name]) => name === '@semantic-release/release-notes-generator')[1];
   assert.deepEqual(analyzer.releaseRules.find(({ type }) => type === 'refactor'), { type: 'refactor', release: 'patch' });
@@ -137,7 +137,7 @@ test('default enables versioning only for complete manifest and lockfile pairs',
       try { require('node:fs').unlinkSync(path.join(dir, file)); } catch (error) { if (error.code !== 'ENOENT') throw error; }
     }
     for (const file of files) writeFileSync(path.join(dir, file), file === 'package.json' ? '{}\n' : '');
-    return JSON.parse(execFileSync(process.execPath, ['-e', `process.stdout.write(JSON.stringify(require(${JSON.stringify(path.join(root, 'default.releaserc.cjs'))})))`], {
+    return JSON.parse(execFileSync(process.execPath, ['-e', `process.stdout.write(JSON.stringify(require(${JSON.stringify(path.join(root, 'fallback-config.cjs'))})))`], {
       cwd: dir, env, encoding: 'utf8'
     }));
   };
@@ -181,7 +181,7 @@ for (const { branch, message, footer, expected, heading } of [
     // Inherit the actual bundled policy, rather than duplicating its rules.
     // Exclude only plugins that modify files, publish to GitHub, or require credentials.
     const localConfig = [
-      `const policy = require(${JSON.stringify(path.join(root, 'default.releaserc.cjs'))});`,
+      `const policy = require(${JSON.stringify(path.join(root, 'fallback-config.cjs'))});`,
       `module.exports = { ...policy, repositoryUrl: ${JSON.stringify(pathToFileURL(remote).href)},`,
       "  plugins: policy.plugins.filter(([name]) => ['@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator'].includes(name)) };",
     ].join('\n');

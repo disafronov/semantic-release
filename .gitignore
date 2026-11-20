@@ -4,7 +4,7 @@
 !/.github/**
 !/.dockerignore
 !/.gitignore
-!/default.releaserc.cjs
+!/fallback-config.cjs
 !/Dockerfile
 !/LICENSE
 !/package-lock.json
