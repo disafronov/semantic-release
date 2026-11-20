@@ -8,6 +8,8 @@ import { pathToFileURL } from 'node:url';
 import util from 'node:util';
 import hideSensitive from 'semantic-release/lib/hide-sensitive.js';
 import { SEMANTIC_RELEASE_DEFAULT_CONFIG } from 'semantic-release/lib/definitions/constants.js';
+import semanticRelease from 'semantic-release';
+import { bundledReleaseOptions, runBundledRelease } from './fallback-runner.mjs';
 
 const require = createRequire(import.meta.url);
 const releaseRequire = createRequire(require.resolve('semantic-release'));
@@ -161,7 +163,7 @@ async function validate() {
       envCi: { isCi: true, isPr: false, branch: baseBranch },
     };
     context.logger = core.getLogger(context);
-    const runtimeOptions = bundled ? require('./default.releaserc.cjs') : {};
+    const runtimeOptions = bundled ? bundledReleaseOptions() : {};
     const resolved = await core.resolveConfig(context, runtimeOptions, {
       baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: true,
     });
@@ -171,11 +173,20 @@ async function validate() {
     // disallowed by our policy, and all Git pushes target a local file:// remote.
     const plugins = resolved.options.plugins.filter(
       (entry) => pluginName(entry) !== '@semantic-release/github');
-    const { options, plugins: localPlugins } = await core.resolveConfig(context, {
+    const runOptions = {
       ...resolved.options, repositoryUrl: remote, plugins, dryRun: false, noCi: false,
-    }, { baseConfig: SEMANTIC_RELEASE_DEFAULT_CONFIG, buildPlugins: true });
-    context.options = options;
-    const result = await core.default({ context, plugins: localPlugins });
+    };
+    // Do not fake envCi inside the core: run through the exact production
+    // semantic-release API entrypoint (including the fallback wrapper).
+    // The GitHub Actions push context is synthetic but must resolve correctly.
+    const ci = core.resolveEnvCi({ cwd: source, env });
+    if (ci.isPr || ci.branch !== baseBranch) {
+      throw new Error('Cannot emulate release branch ' + baseBranch +
+        '; resolved CI context: ' + util.inspect(ci));
+    }
+    const result = bundled
+      ? await runBundledRelease(runOptions, { cwd: source, env })
+      : await semanticRelease(runOptions, { cwd: source, env });
 
     console.log('Validated release policy for ' + baseBranch + ' against actual release history');
     console.log('Configured plugins: ' + resolved.options.plugins.map(pluginName).join(', '));
