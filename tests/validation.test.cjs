@@ -170,14 +170,14 @@ test('PR validation honors a project-specific prepare override and captures its 
     '  ],',
     '};',
     '',
-  ].join('\\n');
+  ].join('\n');
   const f = fixture(t, { '.releaserc.cjs': localPolicy });
   const result = f.run();
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\\/exec"/);
-  assert.match(result.diff, /custom-prepared\\.txt/);
+  assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/exec"/);
+  assert.match(result.diff, /custom-prepared\.txt/);
   assert.match(result.diff, /configured/);
-  assert.match(result.tags, /v1\\.2\\.4/);
+  assert.match(result.tags, /v1\.2\.4/);
 });
 
 test('PR validation fails for invalid npm configuration instead of returning green', (t) => {
