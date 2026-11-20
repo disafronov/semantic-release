@@ -1,3 +1,22 @@
+## [5.0.0](https://github.com/disafronov/semantic-release/compare/v4.0.2...v5.0.0) (2026-11-20)
+
+### ⚠ BREAKING CHANGES
+
+* The image upgrades semantic-release from 25 to 26, whose minimum supported Node.js version is 26.13. Existing consumers using the bundled runtime must use a compatible image.
+
+### Bug Fixes
+
+* apply bundled release policy as runtime options in semantic-release 26 ([9ffaf57](https://github.com/disafronov/semantic-release/commit/9ffaf57d2034d8e6f17f350c7f7845c4d29709ad))
+* include SSH client for Git remote operations ([a416d1a](https://github.com/disafronov/semantic-release/commit/a416d1ad3105cc584f6b88392588aab9aea46582))
+* invoke bundled configuration as runtime policy for fallback ([694238d](https://github.com/disafronov/semantic-release/commit/694238d2014568c9dc29c0cd620e0f0afd3d6b55))
+* redact secret-bearing errors in the fallback runner ([49e8133](https://github.com/disafronov/semantic-release/commit/49e813388d4e5dafb15cd759c5be157940adcd1c))
+
+### Code Refactoring
+
+* audit ([840c889](https://github.com/disafronov/semantic-release/commit/840c88911c829bab826a7c28105648f2fae7895d))
+* rename fallback release script to runner ([0d7bb65](https://github.com/disafronov/semantic-release/commit/0d7bb65ef213c7d1e7c4ad856c81ef42a79214c9))
+* require Node.js 26.13 for semantic-release 26 ([81f0be2](https://github.com/disafronov/semantic-release/commit/81f0be26bb08929c43c83d328eece3d41c0614ee))
+
 ## [5.0.0-rc.4](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.3...v5.0.0-rc.4) (2026-11-20)
 
 ### Code Refactoring
