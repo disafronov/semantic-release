@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 import semanticRelease from 'semantic-release';
+import hideSensitive from 'semantic-release/lib/hide-sensitive.js';
+import util from 'node:util';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -37,5 +39,11 @@ if (!argv.help && !argv.version) {
   // priority over plugins supplied only via --extends. Runtime options win.
   // Pass the full policy (including per-plugin configuration) as runtime options.
   const { help, version, _, $0, ...options } = argv;
-  await semanticRelease({ ...bundled, ...options });
+  try {
+    await semanticRelease({ ...bundled, ...options });
+  } catch (error) {
+    // Match the CLI's secret redaction, including credential-bearing Git URLs.
+    process.stderr.write(hideSensitive(process.env)(util.inspect(error, { colors: true })));
+    process.exitCode = 1;
+  }
 }
