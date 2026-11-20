@@ -27,7 +27,7 @@ const git = (cwd, ...args) => execFileSync('git', args, {
   cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
 }).trim();
 
-function fixture(t, files = {}, message = 'fix: validate release policy') {
+function fixture(t, files = {}, message = 'fix: validate release policy', baseBranch = 'main') {
   const dir = mkdtempSync(path.join(tmpdir(), 'pr-validation-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const cwd = path.join(dir, 'project');
@@ -39,16 +39,26 @@ function fixture(t, files = {}, message = 'fix: validate release policy') {
   writeFileSync(path.join(cwd, 'README.md'), 'original\n');
   git(cwd, 'add', '.');
   git(cwd, 'commit', '-m', 'chore: initial');
+  git(cwd, 'tag', 'v1.2.3');
   git(cwd, 'remote', 'add', 'origin', pathToFileURL(remote).href);
   git(cwd, 'push', 'origin', 'main');
-  git(cwd, 'fetch', 'origin', 'main');
-  git(cwd, 'switch', '-c', 'topic');
+  git(cwd, 'push', 'origin', '--tags');
+  if (baseBranch === 'rc') {
+    git(cwd, 'switch', '-c', 'rc');
+    git(cwd, 'push', 'origin', 'rc');
+  }
+  git(cwd, 'fetch', 'origin', '+refs/heads/*:refs/remotes/origin/*');
+  git(cwd, 'switch', '-c', 'topic', 'origin/' + baseBranch);
   for (const [name, content] of Object.entries(files)) {
     writeFileSync(path.join(cwd, name), content);
   }
   writeFileSync(path.join(cwd, 'README.md'), 'updated\n');
   git(cwd, 'add', '.');
   git(cwd, 'commit', '-m', message);
+  // Emulate actions/checkout on a PR: the checkout is a synthetic merge
+  // containing the target branch and the proposed changes.
+  git(cwd, 'switch', '-c', 'pr-merge', 'origin/' + baseBranch);
+  git(cwd, 'merge', '--no-ff', 'topic', '-m', 'Merge pull request #123');
   const initialStatus = git(cwd, 'status', '--porcelain');
   const initialTags = git(cwd, 'tag', '--list');
   return {
@@ -75,7 +85,7 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   assert.match(result.output, /No local semantic-release configuration found, using default/);
   assert.match(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/npm/);
-  assert.match(result.output, /Analyzed 1 PR commits; release type: patch/);
+  assert.match(result.output, /Next release: 1\.2\.4/);
   assert.match(result.output, /Validation passed/);
   assert.doesNotMatch(result.output, /configured to only publish from|triggered by a pull request/);
 });
@@ -93,7 +103,24 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   assert.match(result.output, /Configured plugins:.*@semantic-release\/npm/);
   assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/exec/);
   assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
-  assert.match(result.output, /release type: patch/);
+  assert.match(result.output, /Next release: 1\.2\.4/);
+});
+
+test('PR validation uses upstream prerelease computation on rc with actual tag history', (t) => {
+  const f = fixture(t, {}, 'feat: new prerelease feature', 'rc');
+  const result = f.run('rc');
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Run automated release from branch rc/);
+  assert.match(result.output, /Found git tag v1\.2\.3 associated with version 1\.2\.3/);
+  assert.match(result.output, /Next release: 1\.3\.0-rc\.1/);
+  assert.match(result.output, /Validation passed/);
+});
+
+test('PR validation fails rather than inventing a release for malformed tags', (t) => {
+  const f = fixture(t, { '.releaserc.cjs': "module.exports = { branches: ['main'], tagFormat: 'invalid', plugins: ['@semantic-release/commit-analyzer'] };\\n" });
+  const result = f.run();
+  assert.notEqual(result.status, 0, result.output);
+  assert.match(result.output, /ETAGNOVERSION|EINVALIDTAGFORMAT/);
 });
 
 test('PR validation fails for invalid npm configuration instead of returning green', (t) => {
@@ -110,7 +137,7 @@ test('PR validation checks non-releasing changes and rejects absent target branc
   const f = fixture(t, {}, 'chore: update pipeline');
   const result = f.run();
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /release type: none/);
+  assert.match(result.output, /Next release: none/);
   const wrongBranch = f.run('rc');
   assert.notEqual(wrongBranch.status, 0, wrongBranch.output);
   assert.doesNotMatch(wrongBranch.output, /Validation passed/);
