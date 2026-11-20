@@ -35,6 +35,12 @@ function fixture(t, files = {}) {
   // Intercept only the fallback Node runner; delegate package inspection to real Node.
   writeFileSync(path.join(bin, 'node'), `#!${process.execPath}
 const { spawnSync } = require('node:child_process');
+if (process.argv[2] === ${JSON.stringify(path.join(root, 'validate-release.mjs'))}) {
+  require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
+    runner: 'validate', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
+  }));
+  process.exit(Number(process.env.RELEASE_STATUS || 0));
+}
 if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-runner.mjs'))}) {
   require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
     runner: 'fallback', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
@@ -157,4 +163,20 @@ test('git log failure still stops the wrapper', (t) => {
   assert.equal(result.status, 17);
   assert.equal(result.invocation, undefined);
   assert.equal(result.stdout, '');
+});
+
+test('validation uses the bundled policy only when local configuration is absent', (t) => {
+  const withoutConfig = fixture(t, { 'README.md': 'fixture\n' });
+  const defaultRun = withoutConfig.run(['--validate', '--base-branch', 'main']);
+  assert.equal(defaultRun.status, 0, defaultRun.stderr);
+  assert.equal(defaultRun.invocation.runner, 'validate');
+  assert.deepEqual(defaultRun.invocation.args, ['--base-branch', 'main', '--bundled']);
+  assert.equal(defaultRun.stdout, message + '\n');
+
+  const withConfig = fixture(t, { '.releaserc.cjs': 'module.exports = {plugins: []};' });
+  const localRun = withConfig.run(['--validate', '--base-branch', 'rc']);
+  assert.equal(localRun.status, 0, localRun.stderr);
+  assert.equal(localRun.invocation.runner, 'validate');
+  assert.deepEqual(localRun.invocation.args, ['--base-branch', 'rc']);
+  assert.equal(localRun.stdout, '');
 });

@@ -36,6 +36,17 @@ has_local_config() {
 # This is needed for scripts executed via @semantic-release/exec plugin
 export NODE_PATH="/opt/semantic-release/node_modules:${NODE_PATH:-}"
 
+# PR validation loads the real policy, plugins and commits without invoking
+# semantic-release's early PR exit or granting the job release credentials.
+if [ "${1:-}" = "--validate" ]; then
+  shift
+  if has_local_config; then
+    exec node "$(dirname "$0")/validate-release.mjs" "$@"
+  fi
+  echo "No local semantic-release configuration found, using default"
+  exec node "$(dirname "$0")/validate-release.mjs" "$@" --bundled
+fi
+
 if ! has_local_config; then
   echo "No local semantic-release configuration found, using default"
   # In semantic-release 26, its built-in plugins override those from --extends.
