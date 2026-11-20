@@ -1,3 +1,9 @@
+## [5.0.0-rc.4](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.3...v5.0.0-rc.4) (2026-11-20)
+
+### Code Refactoring
+
+* rename fallback release script to runner ([f0a4e3e](https://github.com/disafronov/semantic-release/commit/f0a4e3e243a7c73827799865e4a8e7256a834b97))
+
 ## [5.0.0-rc.3](https://github.com/disafronov/semantic-release/compare/v5.0.0-rc.2...v5.0.0-rc.3) (2026-11-20)
 
 ### Bug Fixes
