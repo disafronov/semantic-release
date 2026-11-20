@@ -32,7 +32,7 @@ function fixture(t, files = {}) {
     writeFileSync(target, content);
   }
   writeFileSync(path.join(bin, 'git'), '#!/bin/sh\nexit "${GIT_STATUS:-0}"\n', { mode: 0o755 });
-  // Intercept only the fallback Node runner; delegate package inspection to real Node.
+  // Intercept the fallback CLI adapter; delegate package inspection to real Node.
   writeFileSync(path.join(bin, 'node'), `#!${process.execPath}
 const { spawnSync } = require('node:child_process');
 if (process.argv[2] === ${JSON.stringify(path.join(root, 'validate-release.mjs'))}) {
@@ -41,7 +41,7 @@ if (process.argv[2] === ${JSON.stringify(path.join(root, 'validate-release.mjs')
   }));
   process.exit(Number(process.env.RELEASE_STATUS || 0));
 }
-if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-runner.mjs'))}) {
+if (process.argv[2] === ${JSON.stringify(path.join(root, 'fallback-cli.mjs'))}) {
   require('node:fs').writeFileSync(process.env.CAPTURE, JSON.stringify({
     runner: 'fallback', args: process.argv.slice(3), nodePath: process.env.NODE_PATH
   }));
