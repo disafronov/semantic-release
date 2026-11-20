@@ -107,8 +107,10 @@ test('PR validation actually checks Python/uv plugins and analyzes a patch commi
   const result = f.run();
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /No local semantic-release configuration found, using default/);
-  assert.match(result.output, /Configured plugins:.*@semantic-release\/exec/);
-  assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/npm/);
+  assert.match(result.output, /Active plugins:.*@semantic-release\/exec/);
+  assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/github/);
+  assert.doesNotMatch(result.output, /Loaded plugin .*@semantic-release\/github/);
+  assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/npm/);
   assert.match(result.output, /Next release: 1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/exec"/);
   assert.match(result.output, /Validation passed/);
@@ -130,8 +132,8 @@ test('PR validation checks npm plugin without requiring npm or GitHub release to
   });
   const result = f.run();
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /Configured plugins:.*@semantic-release\/npm/);
-  assert.doesNotMatch(result.output, /Configured plugins:.*@semantic-release\/exec/);
+  assert.match(result.output, /Active plugins:.*@semantic-release\/npm/);
+  assert.doesNotMatch(result.output, /Active plugins:.*@semantic-release\/exec/);
   assert.match(result.output, /Completed step "verifyConditions" of plugin "@semantic-release\/npm"/);
   assert.match(result.output, /Next release: 1\.2\.4/);
   assert.match(result.output, /Completed step "prepare" of plugin "@semantic-release\/npm"/);
