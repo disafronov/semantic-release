@@ -151,6 +151,8 @@ async function validate() {
       GIT_ALLOW_PROTOCOL: 'file',
       GIT_TERMINAL_PROMPT: '0',
       GIT_ASKPASS: 'echo',
+      CI: 'true',
+      GITHUB_ACTIONS: 'true',
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REF: 'refs/heads/' + baseBranch,
     };
